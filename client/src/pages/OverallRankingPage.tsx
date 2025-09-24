@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { TrophyOutlined, StarOutlined, ForkOutlined, EyeOutlined } from '@ant-design/icons';
 import { Card, Row, Col, Button, Spin, message, Tag, Statistic, List, Avatar, Typography } from 'antd';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Paragraph } = Typography;
 
 interface GitHubRepository {
     id: number;
@@ -273,12 +273,12 @@ const OverallRankingPage: React.FC = () => {
                                         {repo.topics && repo.topics.length > 0 && (
                                             <div className="mt-2">
                                                 {repo.topics.slice(0, 5).map((topic) => (
-                                                    <Tag key={topic} size="small" className="mb-1">
+                                                    <Tag key={topic} className="mb-1">
                                                         {topic}
                                                     </Tag>
                                                 ))}
                                                 {repo.topics.length > 5 && (
-                                                    <Tag size="small" className="mb-1">
+                                                    <Tag className="mb-1">
                                                         +{repo.topics.length - 5}
                                                     </Tag>
                                                 )}

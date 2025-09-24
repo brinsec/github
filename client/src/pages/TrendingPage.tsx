@@ -16,12 +16,6 @@ interface TrendingRepository {
     updated_at: string;
 }
 
-interface TrendingStats {
-    discovered: number;
-    starred: number;
-    classified: number;
-    repositories: TrendingRepository[];
-}
 
 const TrendingPage: React.FC = () => {
     const [loading, setLoading] = useState(false);

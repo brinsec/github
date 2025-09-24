@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { SearchOutlined, StarOutlined, ForkOutlined, EyeOutlined, RiseOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import { Card, Row, Col, Button, Spin, message, Tag, Statistic, List, Avatar, Typography, Tabs, Progress } from 'antd';
+import { Card, Row, Col, Button, Spin, message, Tag, Statistic, List, Avatar, Typography, Tabs } from 'antd';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
 interface DiscoveredProject {
@@ -370,12 +370,12 @@ const ProjectDiscoveryPage: React.FC = () => {
                                         {project.topics && project.topics.length > 0 && (
                                             <div className="mb-2">
                                                 {project.topics.slice(0, 5).map((topic) => (
-                                                    <Tag key={topic} size="small" className="mb-1">
+                                                    <Tag key={topic} className="mb-1">
                                                         {topic}
                                                     </Tag>
                                                 ))}
                                                 {project.topics.length > 5 && (
-                                                    <Tag size="small" className="mb-1">
+                                                    <Tag className="mb-1">
                                                         +{project.topics.length - 5}
                                                     </Tag>
                                                 )}

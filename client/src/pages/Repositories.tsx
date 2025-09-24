@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
     Star, 
     GitFork, 
     ExternalLink, 
     Search, 
-    Filter,
     Calendar,
     Code,
 } from 'lucide-react';
@@ -112,7 +111,7 @@ export default function Repositories() {
                         >
                             <option value="">所有语言</option>
                             {languages.map(lang => (
-                                <option key={lang} value={lang}>{lang}</option>
+                                <option key={lang} value={lang || ''}>{lang}</option>
                             ))}
                         </select>
                         <select

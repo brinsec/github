@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
     BarChart3, 
     TrendingUp, 
@@ -211,7 +211,7 @@ export default function Statistics() {
                                     fill="#8884d8"
                                     dataKey="count"
                                 >
-                                    {statistics.categoryDistribution.filter(c => c.count > 0).map((entry, index) => (
+                                    {statistics.categoryDistribution.filter(c => c.count > 0).map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
     Github, 
     Star, 
     GitFork, 
-    TrendingUp, 
     RefreshCw,
     AlertCircle,
 } from 'lucide-react';
@@ -185,7 +184,7 @@ export default function Dashboard() {
                                     fill="#8884d8"
                                     dataKey="count"
                                 >
-                                    {(statistics?.categoryDistribution || []).map((entry, index) => (
+                                    {(statistics?.categoryDistribution || []).map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
