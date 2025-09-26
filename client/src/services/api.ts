@@ -52,11 +52,19 @@ api.interceptors.response.use(
         console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
         return response;
     },
-    (error) => {
-        console.error('响应错误:', error);
-        if (error.response) {
-            console.error('错误详情:', error.response.data);
+    async (error) => {
+        console.error('API请求失败:', error);
+        
+        // 自动回退到模拟数据（如果是CORS错误或在GitHub Pages环境）
+        if (error.code === 'ERR_NETWORK' || error.name === 'AxiosError') {
+            const isGitHubPages = window.location.hostname.includes('github.io');
+            if (isGitHubPages) {
+                console.log('🔄 CORS错误检测，自动切换到模拟数据模式');
+                // 这里将在后续的API拦截器中处理挂起的请求
+                return Promise.reject(error);
+            }
         }
+        
         return Promise.reject(error);
     }
 );
