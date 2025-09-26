@@ -11,13 +11,13 @@ console.log('🚀 Vercel环境检测:', {
 // 初始化数据库
 initializeDatabase().catch(console.error);
 
-// ULTRA NUCLEAR CORS - 最高级别Vercel入口CORS拦截
+// 额外的 CORS 强化器在应用顶部
 app.use((req: any, res: any, next: any) => {
     const origin = req.headers.origin;
-    console.log('🚀 VERCEL API 入口CORS处理:', origin, req.method, req.url);
+    console.log('🚀 VERCEL顶级CORS处理:', origin, req.method, req.url);
     
-    // ULTRA强制性CORS头部设置 - 进入的最优先处理
-    const corsHeaders = {
+    // 超级CORS头设置
+    const corsSuperHeaders = {
         'Access-Control-Allow-Origin': origin || '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD',
         'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma',
@@ -26,30 +26,56 @@ app.use((req: any, res: any, next: any) => {
         'Vary': 'Origin'
     };
     
-    // 强制应用每个CORS头
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-        res.setHeader(key, value);
-    });
+    // 批量设置
+    Object.entries(corsSuperHeaders).forEach(([key, value]) => res.setHeader(key, value));
     
-    // GitHub Pages特殊强化路径处理
-    if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
+    // 特别GitHub Pages处理
+    if (origin && (origin.includes('github.io') || origin.includes('brinsec.github.io'))) {
         res.setHeader('Access-Control-Allow-Origin', origin);
-        console.log('🎯 Vercel GitHub Pages特殊处理:', origin);
+        console.log('🎯 顶级GitHub Pages CORS处理:', origin);
     }
     
-    // OPTIONS预检立即响应
+    // OPTIONS立即响应
     if (req.method === 'OPTIONS') {
-        console.log('🚀 VERCEL OPTIONS响应成功:', origin);
+        console.log('🚀 OPTIONS立即响应完成:', origin);
         return res.status(200).json({
             success: true,
-            message: 'CORS预检通过',
-            origin: origin,
-            handled_by: 'vercel_handler'
+            message: 'CORS预检完成',
+            origin: origin
         });
     }
     
     next();
 });
 
-// 导出Express应用给Vercel
+// 重新定义健康检查处理器
+app.get('/api/health', (req: any, res: any) => {
+    const origin = req.headers.origin;
+    console.log('🏥 健康检查强化处理:', origin);
+    
+    // 第三次确保CORS头
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+    
+    // 最后确定的GitHub Pages处理
+    if (origin && (origin.includes('github.io') || origin.includes('brinsec.github.io'))) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        console.log('🎯 健康检查GitHub Pages终极处理:', origin);
+    }
+    
+    res.status(200).json({
+        success: true,
+        message: 'API服务运行正常',
+        origin: origin,
+        cors: 'definitively_enabled',
+        vercel: !!process.env.VERCEL,
+        github_token: !!process.env.GITHUB_TOKEN,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// 导出应用
 export default app;
