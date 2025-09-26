@@ -1,0 +1,10 @@
+{
+  "target": "production",
+  "scope": "brinsecs-projects",
+  "members": [
+    {
+      "name": "GITHUB_TOKEN",
+      "value": "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"
+    }
+  ]
+}
