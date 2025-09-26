@@ -27,25 +27,53 @@ export function setupRoutes(app: Express): void {
     const projectDiscoveryService = new ProjectDiscoveryService();
     const dailySearchService = new DailySearchService();
 
-    // 为所有路由添加CORS头中间件 
+    // 终极CORS中间件：强制设置每个响应头
     app.use((req, res, next) => {
-        // Vercel环境中的额外CORS处理
-        if (process.env.VERCEL) {
-            res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-            res.header('Access-Control-Allow-Credentials', 'true');
+        const origin = req.headers.origin;
+        console.log('📡 路由CORS处理:', origin, req.method, req.path);
+        
+        // 设置所有必要的CORS头
+        res.header('Access-Control-Allow-Origin', origin || '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Max-Age', '86400');
+        
+        // 对OPTIONS请求立即响应
+        if (req.method === 'OPTIONS') {
+            console.log('🔧 OPTIONS请求处理完成');
+            return res.status(200).json({ success: true, cors: 'enabled' });
         }
+        
         next();
     });
 
-    // 健康检查
+    // 全局响应中间件：为所有响应自动添加CORS头
+    app.use((req, res, next) => {
+        const originalJson = res.json;
+        res.json = function(obj: any) {
+            if (!res.headersSent) {
+                res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+                res.header('Access-Control-Allow-Credentials', 'true');
+                res.header('Vary', 'Origin');
+            }
+            return originalJson.call(this, obj);
+        };
+        next();
+    });
+
+    // 健康检查 - 强化CORS测试
     app.get('/api/health', (req: Request, res: Response) => {
-        // 在Vercel测试CORS
-        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+        const origin = req.headers.origin;
+        console.log('🏥 健康检查请求:', origin);
+        res.header('Access-Control-Allow-Origin', origin || '*');
         res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.json({ 
             success: true, 
             message: 'GitHub自动化系统运行正常',
-            origin: req.headers.origin,
+            origin: origin,
+            cors_enabled: true,
             timestamp: new Date().toISOString()
         });
     });
