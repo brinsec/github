@@ -6,32 +6,25 @@ export const mockApi = {
             success: true,
             data: {
                 totalRepositories: 25,
-                totalCategories: 5,
                 totalStars: 1250,
+                totalForks: 320,
                 categoryDistribution: [
-                    { name: '前端开发', count: 8 },
-                    { name: '后端开发', count: 6 },
-                    { name: '工具库', count: 5 },
-                    { name: '学习项目', count: 4 },
-                    { name: '其他', count: 2 }
+                    { categoryId: '1', categoryName: '前端开发', count: 8, percentage: 32.0 },
+                    { categoryId: '2', categoryName: '后端开发', count: 6, percentage: 24.0 },
+                    { categoryId: '3', categoryName: '工具库', count: 5, percentage: 20.0 },
+                    { categoryId: '4', categoryName: '学习项目', count: 4, percentage: 16.0 },
+                    { categoryId: '5', categoryName: '其他', count: 2, percentage: 8.0 }
                 ],
-                languageStats: [
-                    { name: 'JavaScript', count: 12 },
-                    { name: 'TypeScript', count: 8 },
-                    { name: 'Python', count: 3 },
-                    { name: 'Go', count: 2 }
+                languageDistribution: [
+                    { language: 'JavaScript', count: 12, percentage: 48.0 },
+                    { language: 'TypeScript', count: 8, percentage: 32.0 },
+                    { language: 'Python', count: 3, percentage: 12.0 },
+                    { language: 'Go', count: 2, percentage: 8.0 }
                 ],
-                topRepositories: [
-                    {
-                        id: 1,
-                        name: 'awesome-project',
-                        full_name: 'user/awesome-project',
-                        description: '一个很棒的项目',
-                        stargazers_count: 150,
-                        forks_count: 25,
-                        language: 'JavaScript',
-                        html_url: 'https://github.com/user/awesome-project'
-                    }
+                activityStats: [
+                    { period: '本周', repositoriesAdded: 3, repositoriesUpdated: 12 },
+                    { period: '本月', repositoriesAdded: 15, repositoriesUpdated: 45 },
+                    { period: '今年', repositoriesAdded: 180, repositoriesUpdated: 267 }
                 ]
             }
         }
