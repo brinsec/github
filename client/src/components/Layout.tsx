@@ -12,6 +12,7 @@ import {
     Clock,
     Trophy,
     Search,
+    Database,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -27,6 +28,7 @@ interface LayoutProps {
         { name: '热门项目', href: '/trending', icon: TrendingUp },
         { name: '总榜排行', href: '/overall', icon: Trophy },
         { name: '项目发现', href: '/discovery', icon: Search },
+        { name: '搜索数据库', href: '/search-db', icon: Database },
         { name: '定时任务', href: '/scheduler', icon: Clock },
         { name: '系统设置', href: '/settings', icon: Settings },
     ];

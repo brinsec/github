@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 
 interface TrendingRepository {
     id: number;
@@ -26,8 +27,8 @@ const TrendingPageSimple: React.FC = () => {
         setLoading(true);
         try {
             console.log(`获取 ${period} 热门项目数据...`);
-            const response = await fetch(`http://localhost:3001/api/trending/${period}`);
-            const result = await response.json();
+            const response = await api.get(`/trending/${period}`);
+            const result = response.data;
             
             console.log(`${period} API响应:`, result);
             

@@ -6,6 +6,15 @@ import { TrendingService } from './services/trendingService';
 import { SchedulerService } from './services/schedulerService';
 import { ProjectDiscoveryService } from './services/projectDiscoveryService';
 import { getAllRepositories, getAllCategories, getAllDiscoveredProjects, getNewProjects, getProjectsBySource } from './database';
+import { 
+    getDailySearchRecords, 
+    getDailySearchRecordByDate, 
+    getSearchRecordsByDateRange,
+    getMonthlySearchRecords,
+    getYearlySearchRecords,
+    getAggregatedSearchData,
+    getAllSearchAggregations
+} from './database';
 import { ApiResponse } from '../../shared/types';
 
 export function setupRoutes(app: Express): void {
@@ -563,6 +572,148 @@ export function setupRoutes(app: Express): void {
                 success: true,
                 data: projects,
                 message: `发现 ${projects.length} 个新项目`,
+            };
+            res.json(response);
+        } catch (error: any) {
+            const response: ApiResponse<null> = {
+                success: false,
+                error: error.message,
+            };
+            res.status(500).json(response);
+        }
+    });
+
+    // === 搜索数据库相关API ===
+
+    // 获取所有搜索记录
+    app.get('/api/search/records', async (req: Request, res: Response) => {
+        try {
+            const limit = parseInt(req.query.limit as string) || 30;
+            const records = await getDailySearchRecords(limit);
+            
+            const response: ApiResponse<typeof records> = {
+                success: true,
+                data: records
+            };
+            res.json(response);
+        } catch (error: any) {
+            const response: ApiResponse<null> = {
+                success: false,
+                error: error.message,
+            };
+            res.status(500).json(response);
+        }
+    });
+
+    // 获取某日的搜索记录
+    app.get('/api/search/daily/:date', async (req: Request, res: Response) => {
+        try {
+            const { date } = req.params;
+            const records = await getDailySearchRecordByDate(date);
+            
+            const response: ApiResponse<typeof records> = {
+                success: true,
+                data: records
+            };
+            res.json(response);
+        } catch (error: any) {
+            const response: ApiResponse<null> = {
+                success: false,
+                error: error.message,
+            };
+            res.status(500).json(response);
+        }
+    });
+
+    // 获取日期范围搜索记录
+    app.get('/api/search/range/:startDate/:endDate', async (req: Request, res: Response) => {
+        try {
+            const { startDate, endDate } = req.params;
+            const records = await getSearchRecordsByDateRange(startDate, endDate);
+            
+            const response: ApiResponse<typeof records> = {
+                success: true,
+                data: records
+            };
+            res.json(response);
+        } catch (error: any) {
+            const response: ApiResponse<null> = {
+                success: false,
+                error: error.message,
+            };
+            res.status(500).json(response);
+        }
+    });
+
+    // 获取月度搜索记录
+    app.get('/api/search/monthly/:month', async (req: Request, res: Response) => {
+        try {
+            const { month } = req.params; // YYYY-MM format
+            const records = await getMonthlySearchRecords(month);
+            
+            const response: ApiResponse<typeof records> = {
+                success: true,
+                data: records
+            };
+            res.json(response);
+        } catch (error: any) {
+            const response: ApiResponse<null> = {
+                success: false,
+                error: error.message,
+            };
+            res.status(500).json(response);
+        }
+    });
+
+    // 获取年度搜索记录
+    app.get('/api/search/yearly/:year', async (req: Request, res: Response) => {
+        try {
+            const { year } = req.params; // YYYY format
+            const records = await getYearlySearchRecords(year);
+            
+            const response: ApiResponse<typeof records> = {
+                success: true,
+                data: records
+            };
+            res.json(response);
+        } catch (error: any) {
+            const response: ApiResponse<null> = {
+                success: false,
+                error: error.message,
+            };
+            res.status(500).json(response);
+        }
+    });
+
+    // 获取聚合数据 - 按时间维度
+    app.get('/api/search/aggregate/:period/:periodValue', async (req: Request, res: Response) => {
+        try {
+            const { period, periodValue } = req.params as { period: 'daily' | 'monthly' | 'yearly', periodValue: string };
+            const aggregatedData = await getAggregatedSearchData(period, periodValue);
+            
+            const response: ApiResponse<typeof aggregatedData> = {
+                success: true,
+                data: aggregatedData
+            };
+            res.json(response);
+        } catch (error: any) {
+            const response: ApiResponse<null> = {
+                success: false,
+                error: error.message,
+            };
+            res.status(500).json(response);
+        }
+    });
+
+    // 获取所有聚合数据
+    app.get('/api/search/aggregate-all/:period', async (req: Request, res: Response) => {
+        try {
+            const { period } = req.params as { period: 'daily' | 'monthly' | 'yearly' };
+            const aggregatedData = await getAllSearchAggregations(period);
+            
+            const response: ApiResponse<typeof aggregatedData> = {
+                success: true,
+                data: aggregatedData
             };
             res.json(response);
         } catch (error: any) {

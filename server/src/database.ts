@@ -4,6 +4,50 @@ import path from 'path';
 import fs from 'fs';
 import { GitHubRepository, Category, RepositoryClassification } from '../../shared/types';
 
+// 每日搜索记录
+export interface DailySearchRecord {
+    id: string;
+    searchDate: string; // YYYY-MM-DD
+    searchQuery: string;
+    results: GitHubRepository[];
+    stats: SearchStats;
+    createdAt: string;
+    reportPath?: string;
+}
+
+// 搜索结果统计
+export interface SearchStats {
+    totalFound: number;
+    newlyDiscovered: number;
+    averageStars: number;
+    topLanguages: Array<{ name: string; count: number }>;
+    totalWatchers: number;
+    topTopics: Array<{ name: string; count: number }>;
+}
+
+// 月度/年度聚合数据
+export interface AggregatedSearchData {
+    period: 'daily' | 'monthly' | 'yearly';
+    periodValue: string; // 2024-01 or 2024
+    searchRecords: DailySearchRecord[];
+    aggregatedStats: {
+        totalSearches: number;
+        totalProjectsFound: number;
+        totalNewProjects: number;
+        averageProjectsPerDay: number;
+        topLanguages: Array<{ name: string; totalCount: number; averageStars: number }>;
+        growthTrend: GrowthTrend[];
+    };
+}
+
+// 增长趋势
+export interface GrowthTrend {
+    period: string;
+    projects: number;
+    newProjects: number;
+    stars: number;
+}
+
 // 发现的项目类型
 export interface DiscoveredProject {
     id: string;
@@ -68,6 +112,12 @@ interface DatabaseSchema {
     repositoryClassifications: RepositoryClassification[];
     discoveredProjects: DiscoveredProject[];
     projectChanges: ProjectChange[];
+    dailySearchRecords: DailySearchRecord[];
+    searchAggregations: {
+        daily: { [date: string]: AggregatedSearchData };
+        monthly: { [month: string]: AggregatedSearchData };
+        yearly: { [year: string]: AggregatedSearchData };
+    };
 }
 
 // 初始化数据库
@@ -78,6 +128,12 @@ const defaultData: DatabaseSchema = {
     repositoryClassifications: [],
     discoveredProjects: [],
     projectChanges: [],
+    dailySearchRecords: [],
+    searchAggregations: {
+        daily: {},
+        monthly: {},
+        yearly: {}
+    },
 };
 
 export const db = new Low(adapter, defaultData);
@@ -311,4 +367,153 @@ export async function getRecentChanges(days: number = 7): Promise<ProjectChange[
     cutoffDate.setDate(cutoffDate.getDate() - days);
     
     return changes.filter(c => new Date(c.recorded_at) >= cutoffDate);
+}
+
+// === 每日搜索记录相关函数 ===
+
+export async function saveDailySearchRecord(record: DailySearchRecord): Promise<void> {
+    await db.read();
+    if (!db.data.dailySearchRecords) {
+        db.data.dailySearchRecords = [];
+    }
+    db.data.dailySearchRecords.push(record);
+    await db.write();
+}
+
+export async function getDailySearchRecords(limit = 30): Promise<DailySearchRecord[]> {
+    const records = await db.read().then(() => db.data.dailySearchRecords || []);
+    return records.sort((a, b) => new Date(b.searchDate).getTime() - new Date(a.searchDate).getTime())
+        .slice(0, limit);
+}
+
+export async function getDailySearchRecordByDate(date: string): Promise<DailySearchRecord[]> {
+    const records = await db.read().then(() => db.data.dailySearchRecords || []);
+    return records.filter(record => record.searchDate === date);
+}
+
+export async function getSearchRecordsByDateRange(startDate: string, endDate: string): Promise<DailySearchRecord[]> {
+    const records = await db.read().then(() => db.data.dailySearchRecords || []);
+    return records.filter(record => 
+        record.searchDate >= startDate && record.searchDate <= endDate
+    );
+}
+
+export async function getMonthlySearchRecords(month: string): Promise<DailySearchRecord[]> {
+    const records = await db.read().then(() => db.data.dailySearchRecords || []);
+    return records.filter(record => record.searchDate.startsWith(month));
+}
+
+export async function getYearlySearchRecords(year: string): Promise<DailySearchRecord[]> {
+    const records = await db.read().then(() => db.data.dailySearchRecords || []);
+    return records.filter(record => record.searchDate.startsWith(year));
+}
+
+// === 搜索聚合数据相关函数 ===
+
+export async function saveAggregatedSearchData(
+    period: 'daily' | 'monthly' | 'yearly',
+    periodValue: string,
+    aggregatedData: AggregatedSearchData
+): Promise<void> {
+    await db.read();
+    if (!db.data.searchAggregations) {
+        db.data.searchAggregations = { daily: {}, monthly: {}, yearly: {} };
+    }
+    db.data.searchAggregations[period][periodValue] = aggregatedData;
+    await db.write();
+}
+
+export async function getAggregatedSearchData(
+    period: 'daily' | 'monthly' | 'yearly',
+    periodValue: string
+): Promise<AggregatedSearchData | null> {
+    await db.read();
+    if (!db.data.searchAggregations) {
+        return null;
+    }
+    return db.data.searchAggregations[period][periodValue] || null;
+}
+
+export async function getAllSearchAggregations(period: 'daily' | 'monthly' | 'yearly'): Promise<AggregatedSearchData[]> {
+    await db.read();
+    if (!db.data.searchAggregations) {
+        return [];
+    }
+    return Object.values(db.data.searchAggregations[period]);
+}
+
+// 计算月度聚合数据
+export async function calculateMonthlyAggregations(yearMonth: string): Promise<AggregatedSearchData> {
+    const records = await getMonthlySearchRecords(yearMonth);
+    const stats = {
+        totalSearches: records.length,
+        totalProjectsFound: records.reduce((sum, record) => sum + record.stats.totalFound, 0),
+        totalNewProjects: records.reduce((sum, record) => sum + record.stats.newlyDiscovered, 0),
+        averageProjectsPerDay: records.length > 0 ? records.reduce((sum, record) => sum + record.stats.totalFound, 0) / records.length : 0,
+        topLanguages: aggregateLanguages(records),
+        growthTrend: calculateGrowthTrend(records)
+    };
+
+    return {
+        period: 'monthly',
+        periodValue: yearMonth,
+        searchRecords: records,
+        aggregatedStats: stats
+    };
+}
+
+// 计算年度聚合数据
+export async function calculateYearlyAggregations(year: string): Promise<AggregatedSearchData> {
+    const records = await getYearlySearchRecords(year);
+    const stats = {
+        totalSearches: records.length,
+        totalProjectsFound: records.reduce((sum, record) => sum + record.stats.totalFound, 0),
+        totalNewProjects: records.reduce((sum, record) => sum + record.stats.newlyDiscovered, 0),
+        averageProjectsPerDay: records.length > 0 ? records.reduce((sum, record) => sum + record.stats.totalFound, 0) / records.length : 0,
+        topLanguages: aggregateLanguages(records),
+        growthTrend: calculateGrowthTrend(records)
+    };
+
+    return {
+        period: 'yearly',
+        periodValue: year,
+        searchRecords: records,
+        aggregatedStats: stats
+    };
+}
+
+function aggregateLanguages(records: DailySearchRecord[]) {
+    const languageMap: { [key: string]: { totalCount: number; stars: number[] } } = {};
+    
+    records.forEach(record => {
+        record.stats.topLanguages.forEach(lang => {
+            if (!languageMap[lang.name]) {
+                languageMap[lang.name] = { totalCount: 0, stars: [] };
+            }
+            languageMap[lang.name].totalCount += lang.count;
+            
+            // 计算平均stars（这里简化处理）
+            const repos = record.results.filter(repo => repo.language === lang.name);
+            repos.forEach(repo => {
+                languageMap[lang.name].stars.push(repo.stargazers_count);
+            });
+        });
+    });
+
+    return Object.entries(languageMap)
+        .map(([name, data]) => ({
+            name,
+            totalCount: data.totalCount,
+            averageStars: data.stars.length > 0 ? data.stars.reduce((sum, stars) => sum + stars, 0) / data.stars.length : 0
+        }))
+        .sort((a, b) => b.totalCount - a.totalCount);
+}
+
+function calculateGrowthTrend(records: DailySearchRecord[]): GrowthTrend[] {
+    return records.map(record => ({
+        period: record.searchDate,
+        projects: record.stats.totalFound,
+        newProjects: record.stats.newlyDiscovered,
+        stars: record.stats.averageStars * record.stats.totalFound
+    }));
 }

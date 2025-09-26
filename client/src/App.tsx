@@ -9,6 +9,7 @@ import TrendingTestPage from './pages/TrendingTestPage';
 import SchedulerPage from './pages/SchedulerPage';
 import OverallRankingPage from './pages/OverallRankingPage';
 import ProjectDiscoveryPage from './pages/ProjectDiscoveryPage';
+import SearchDatabasePage from './pages/SearchDatabasePage';
 import Settings from './pages/Settings';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
                 <Route path="/scheduler" element={<SchedulerPage />} />
                 <Route path="/overall" element={<OverallRankingPage />} />
                 <Route path="/discovery" element={<ProjectDiscoveryPage />} />
+                <Route path="/search-db" element={<SearchDatabasePage />} />
                 <Route path="/settings" element={<Settings />} />
             </Routes>
         </Layout>
