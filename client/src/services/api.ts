@@ -31,8 +31,8 @@ const testApiAvailability = async () => {
         const response = await axios.get(`${baseURL}/health`, { timeout: 10000 });
         console.log('✅ 后端健康检测成功:', response.data);
         return true;
-    } catch (error) {
-        console.error('❌ 后端健康检测失败:', error.message);
+    } catch (error: any) {
+        console.error('❌ 后端健康检测失败:', error?.message || error);
         return false;
     }
 };
