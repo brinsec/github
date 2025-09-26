@@ -22,6 +22,11 @@ if (isGitHubPages) {
 const api = axios.create({
     baseURL,
     timeout: 30000,
+    withCredentials: false, // 避免跨域证书问题
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
 });
 
 // 检测API是否可用的辅助函数
