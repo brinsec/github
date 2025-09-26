@@ -5,6 +5,7 @@ import {
     PauseCircleOutlined, 
     ClockCircleOutlined
 } from '@ant-design/icons';
+import { mockApi } from '../services/mockApi';
 
 interface SchedulerStatus {
     isRunning: boolean;
@@ -19,14 +20,29 @@ const SchedulerPage: React.FC = () => {
     // 获取调度器状态
     const fetchStatus = async () => {
         try {
-            const response = await fetch('http://localhost:3001/api/scheduler/status');
-            const result = await response.json();
+            // 检测是否在GitHub Pages环境
+            const isGitHubPages = window.location.hostname.includes('github.io');
             
-            if (result.success) {
+            if (isGitHubPages) {
+                // 使用模拟数据
+                const result = await mockApi.getSchedulerStatus();
                 setStatus(result.data);
+            } else {
+                // 使用真实API
+                const response = await fetch('http://localhost:3001/api/scheduler/status');
+                const result = await response.json();
+                
+                if (result.success) {
+                    setStatus(result.data);
+                }
             }
         } catch (error) {
             console.error('获取状态失败:', error);
+            // 在GitHub Pages环境下显示模拟数据
+            if (window.location.hostname.includes('github.io')) {
+                const result = await mockApi.getSchedulerStatus();
+                setStatus(result.data);
+            }
         }
     };
 
