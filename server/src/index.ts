@@ -11,9 +11,11 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// 中间件 - 为所有环境配置宽松的CORS
+// 中间件 - 强化CORS配置，兼容Vercel环境
 app.use((req, res, next) => {
     const origin = req.headers.origin;
+    console.log('🔄 CORS请求来源:', origin, 'Host:', req.headers.host);
+    
     const allowedOrigins = [
         'http://localhost:3000',
         'http://localhost:5173',
@@ -35,20 +37,32 @@ app.use((req, res, next) => {
         }
     }
 
-    // 设置CORS响应头 - 强化处理
-    if (isAllowed && origin) {
-        res.header('Access-Control-Allow-Origin', origin);
+    // 在Vercel环境中，CORS处理更加宽松
+    if (process.env.VERCEL || origin) {
+        if (isAllowed && origin) {
+            res.header('Access-Control-Allow-Origin', origin);
+            console.log('✅ 允许的Origin:', origin);
+        } else if (origin && origin.includes('github.io')) {
+            res.header('Access-Control-Allow-Origin', origin);
+            console.log('✅ GitHub Pages Origin:', origin);
+        } else {
+            res.header('Access-Control-Allow-Origin', '*');
+        }
     } else {
         res.header('Access-Control-Allow-Origin', 'https://brinsec.github.io');
     }
     
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count');
+    // 强化CORS头
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 
+        'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma'
+    );
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '3600');
+    res.header('Access-Control-Max-Age', '86400');
     
     // 处理预检请求
     if (req.method === 'OPTIONS') {
+        console.log('🔄 处理OPTIONS请求');
         res.status(200).end();
         return;
     }
@@ -56,10 +70,28 @@ app.use((req, res, next) => {
     next();
 });
 
-// 使用cors库作为backup  
+// 使用cors库作为backup，特别针对Vercel环境
 app.use(cors({
-    origin: true,
-    credentials: true
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://brinsec.github.io',
+        /^https:\/\/.*\.github\.io$/
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+        'Origin', 
+        'X-Requested-With', 
+        'Content-Type', 
+        'Accept', 
+        'Authorization', 
+        'Content-Range', 
+        'X-Total-Count', 
+        'Cache-Control', 
+        'Pragma'
+    ],
+    optionsSuccessStatus: 200
 }));
 
 app.use(express.json());

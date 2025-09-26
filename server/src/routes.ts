@@ -27,9 +27,27 @@ export function setupRoutes(app: Express): void {
     const projectDiscoveryService = new ProjectDiscoveryService();
     const dailySearchService = new DailySearchService();
 
+    // 为所有路由添加CORS头中间件 
+    app.use((req, res, next) => {
+        // Vercel环境中的额外CORS处理
+        if (process.env.VERCEL) {
+            res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+            res.header('Access-Control-Allow-Credentials', 'true');
+        }
+        next();
+    });
+
     // 健康检查
     app.get('/api/health', (req: Request, res: Response) => {
-        res.json({ success: true, message: 'GitHub自动化系统运行正常' });
+        // 在Vercel测试CORS
+        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.json({ 
+            success: true, 
+            message: 'GitHub自动化系统运行正常',
+            origin: req.headers.origin,
+            timestamp: new Date().toISOString()
+        });
     });
 
     // 同步用户starred仓库
