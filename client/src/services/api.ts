@@ -8,16 +8,31 @@ let baseURL = '/api'; // 默认本地开发
 
 if (isGitHubPages) {
     // GitHub Pages环境，使用Vercel部署的API
-    baseURL = 'https://github-nxik61rrv-brinsecs-projects.vercel.app/api';
+    baseURL = 'https://github-nxik61rrv-brinsecs-projects.vercel.app';
+    console.log('🌐 GitHub Pages环境，API地址:', baseURL);
 } else if (isVercel) {
     // Vercel环境，使用相对路径
     baseURL = '/api';
+    console.log('🔧 Vercel环境，API地址:', baseURL);
+} else {
+    baseURL = '/api';
+    console.log('🏠 本地开发环境，API地址:', baseURL);
 }
 
 const api = axios.create({
     baseURL,
     timeout: 30000,
 });
+
+// 检测API是否可用的辅助函数
+const testApiAvailability = async () => {
+    try {
+        const response = await axios.get(`${baseURL}/health`, { timeout: 5000 });
+        return response.status === 200;
+    } catch (error) {
+        return false;
+    }
+};
 
 // 请求拦截器
 api.interceptors.request.use(
