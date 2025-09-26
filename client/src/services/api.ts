@@ -24,15 +24,15 @@ const api = axios.create({
     timeout: 30000,
 });
 
-// 检测API是否可用的辅助函数
-const testApiAvailability = async () => {
-    try {
-        const response = await axios.get(`${baseURL}/health`, { timeout: 5000 });
-        return response.status === 200;
-    } catch (error) {
-        return false;
-    }
-};
+// 检测API是否可用的辅助函数 (当前未使用)
+// const testApiAvailability = async () => {
+//     try {
+//         const response = await axios.get(`${baseURL}/health`, { timeout: 5000 });
+//         return response.status === 200;
+//     } catch (error) {
+//         return false;
+//     }
+// };
 
 // 请求拦截器
 api.interceptors.request.use(

@@ -10,7 +10,13 @@ import { mockApi } from '../services/mockApi';
 
 interface SchedulerStatus {
     isRunning: boolean;
-    tasks: string[];
+    lastRun?: string;
+    nextRun?: string;
+    tasks: Array<{
+        name: string;
+        enabled: boolean;
+        schedule: string;
+    }>;
 }
 
 const SchedulerPage: React.FC = () => {
@@ -36,7 +42,7 @@ const SchedulerPage: React.FC = () => {
             // 最终回退到模拟数据
             try {
                 const result = await mockApi.getSchedulerStatus();
-                setStatus(result.data);
+                setStatus(result.data.data);
             } catch (mockError) {
                 console.error('模拟数据出错:', mockError);
             }

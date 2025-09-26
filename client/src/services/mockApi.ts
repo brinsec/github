@@ -54,7 +54,7 @@ export const mockApi = {
     }),
 
     // 模拟热门项目数据
-    getTrendingRepositories: (period: string) => Promise.resolve({
+    getTrendingRepositories: (_period: string) => Promise.resolve({
         data: {
             success: true,
             data: [
