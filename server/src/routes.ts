@@ -52,20 +52,30 @@ export function setupRoutes(app: Express): void {
         next();
     });
 
-    // 全局响应中间件：强化每个响应强制CORS
+    // 超强力响应拦截CORS - 强制覆盖所有响应
     app.use((req, res, next) => {
-        // 拦截响应方法
+        const origin = req.headers.origin;
         const originalSend = res.send;
         const originalJson = res.json;
-        const origin = req.headers.origin;
         
+        // ULTRA CORS响应拦截器
         res.send = function(data: any) {
             if (!res.headersSent) {
+                // Vercel环境最终的CORS强制设置
                 res.setHeader('Access-Control-Allow-Origin', origin || '*');
+                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+                res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
                 res.setHeader('Access-Control-Allow-Credentials', 'true');
+                res.setHeader('Access-Control-Max-Age', '86400');
                 res.setHeader('Vary', 'Origin');
+                
+                // 特别强化GitHub Pages CORS头
+                if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
+                    res.setHeader('Access-Control-Allow-Origin', origin);
+                }
+                
                 if (process.env.VERCEL) {
-                    res.setHeader('Access-Control-Allow-Origin', '*');
+                    res.setHeader('Access-Control-Allow-Origin', origin || '*');
                 }
             }
             return originalSend.call(this, data);
@@ -73,10 +83,21 @@ export function setupRoutes(app: Express): void {
         
         res.json = function(obj: any) {
             if (!res.headersSent) {
+                // 确保JSON响应携带完整CORS信息
                 res.setHeader('Access-Control-Allow-Origin', origin || '*');
+                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+                res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
                 res.setHeader('Access-Control-Allow-Credentials', 'true');
+                res.setHeader('Access-Control-Max-Age', '86400');
+                res.setHeader('Vary', 'Origin');
+                
+                // GitHub Pages特别强化
+                if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
+                    res.setHeader('Access-Control-Allow-Origin', origin);
+                }
+                
                 if (process.env.VERCEL) {
-                    res.setHeader('Access-Control-Allow-Origin', '*');
+                    res.setHeader('Access-Control-Allow-Origin', origin || '*');
                 }
             }
             return originalJson.call(this, obj);
@@ -85,21 +106,40 @@ export function setupRoutes(app: Express): void {
         next();
     });
 
-    // 健康检查 - 强化CORS测试
+    // 健康检查 - 强化CORS测试  
     app.get('/api/health', (req: Request, res: Response) => {
         const origin = req.headers.origin;
-        console.log('🏥 健康检查请求:', origin);
-        res.header('Access-Control-Allow-Origin', origin || '*');
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        res.json({ 
+        console.log('🏥 健康检查请求:', origin, 'Method:', req.method);
+        
+        // 手动强制CORS头确保绝对成功
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Max-Age', '86400');
+        res.setHeader('Vary', 'Origin');
+        
+        // GitHub Pages特别检查
+        if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
+            res.setHeader('Access-Control-Allow-Origin', origin);
+            console.log('🎯 健康检查GitHub Pages CORS:', origin);
+        }
+        
+        const responseData = { 
             success: true, 
             message: 'GitHub自动化系统运行正常',
             origin: origin,
             cors_enabled: true,
-            timestamp: new Date().toISOString()
-        });
+            vercel_env: !!process.env.VERCEL,
+            github_token_set: !!process.env.GITHUB_TOKEN,
+            timestamp: new Date().toISOString(),
+            api_status: 'online'
+        };
+        
+        console.log('🏥 健康检查响应准备发送:', responseData);
+        res.status(200).json(responseData);
     });
+
 
     // 同步用户starred仓库
     app.post('/api/sync/:username', async (req: Request, res: Response) => {
@@ -136,11 +176,12 @@ export function setupRoutes(app: Express): void {
             };
             res.json(response);
         } catch (error: any) {
+            console.error('获取仓库列表失败:', error.message);
             const response: ApiResponse<null> = {
                 success: false,
-                error: error.message,
+                error: error.message || '获取仓库列表失败，数据库连接异常',
             };
-            res.status(500).json(response);
+            res.status(200).json(response); // 返回200状态码但success: false，前端可处理降级
         }
     });
 
@@ -183,7 +224,7 @@ export function setupRoutes(app: Express): void {
         }
     });
 
-    // 获取统计信息
+    // 获取统计信息  
     app.get('/api/statistics', async (req: Request, res: Response) => {
         try {
             const statistics = await statisticsService.getStatistics();
@@ -193,11 +234,13 @@ export function setupRoutes(app: Express): void {
             };
             res.json(response);
         } catch (error: any) {
+            console.error('获取统计信息失败:', error.message);
+            // 优雅降级到模拟数据或错误
             const response: ApiResponse<null> = {
                 success: false,
-                error: error.message,
+                error: error.message || '获取统计信息失败，可能GitHub Token未正确配置',
             };
-            res.status(500).json(response);
+            res.status(200).json(response); // 改为200以避免401错误，前端会检测success字段
         }
     });
 

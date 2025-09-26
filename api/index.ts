@@ -1,36 +1,55 @@
 import app from '../server/src/index';
 import { initializeDatabase } from '../server/src/database';
 
+// Vercel环境配置检查  
+console.log('🚀 Vercel环境检测:', {
+    isVercel: !!process.env.VERCEL,
+    githubToken: !!process.env.GITHUB_TOKEN ? '已设置' : '未设置',
+    nodeEnv: process.env.NODE_ENV || '未设置'
+});
+
 // 初始化数据库
 initializeDatabase().catch(console.error);
 
-// VERCEl终极CORS解决方案 - 在serverless函数层面强制处理
-app.use((req, res, next) => {
-    // 强制设置CORS头，绕过所有可能的限制
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
-    res.setHeader('Access-Control-Allow-Credentials', 'false'); // VERCELOPEN预核问题
-    res.setHeader('Access-Control-Max-Age', '86400');
-    
-    // Vercel特殊处理 - 强制覆盖任何其他CORS设置
+// ULTRA NUCLEAR CORS - 最高级别Vercel入口CORS拦截
+app.use((req: any, res: any, next: any) => {
     const origin = req.headers.origin;
-    if (origin) {
+    console.log('🚀 VERCEL API 入口CORS处理:', origin, req.method, req.url);
+    
+    // ULTRA强制性CORS头部设置 - 进入的最优先处理
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': origin || '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD',
+        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '86400',
+        'Vary': 'Origin'
+    };
+    
+    // 强制应用每个CORS头
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+        res.setHeader(key, value);
+    });
+    
+    // GitHub Pages特殊强化路径处理
+    if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
         res.setHeader('Access-Control-Allow-Origin', origin);
+        console.log('🎯 Vercel GitHub Pages特殊处理:', origin);
     }
     
-    // 立即处理OPTIONS请求
+    // OPTIONS预检立即响应
     if (req.method === 'OPTIONS') {
-        console.log('🚀 VERCEL CORS OPTIONS处理:', origin);
-        return res.status(200).json({ 
-            success: true, 
-            cors: 'vercel-enabled',
-            origin: origin 
+        console.log('🚀 VERCEL OPTIONS响应成功:', origin);
+        return res.status(200).json({
+            success: true,
+            message: 'CORS预检通过',
+            origin: origin,
+            handled_by: 'vercel_handler'
         });
     }
     
-    console.log('💥 Vercel CORS设置完成:', origin, req.method, req.path);
     next();
 });
 
+// 导出Express应用给Vercel
 export default app;

@@ -1,0 +1,268 @@
+[1mdiff --git a/api/index.ts b/api/index.ts[m
+[1mindex 0936433..0f99609 100644[m
+[1m--- a/api/index.ts[m
+[1m+++ b/api/index.ts[m
+[36m@@ -1,36 +1,55 @@[m
+ import app from '../server/src/index';[m
+ import { initializeDatabase } from '../server/src/database';[m
+ [m
+[32m+[m[32m// Vercel环境配置检查[m[41m  [m
+[32m+[m[32mconsole.log('🚀 Vercel环境检测:', {[m
+[32m+[m[32m    isVercel: !!process.env.VERCEL,[m
+[32m+[m[32m    githubToken: !!process.env.GITHUB_TOKEN ? '已设置' : '未设置',[m
+[32m+[m[32m    nodeEnv: process.env.NODE_ENV || '未设置'[m
+[32m+[m[32m});[m
+[32m+[m
+ // 初始化数据库[m
+ initializeDatabase().catch(console.error);[m
+ [m
+[31m-// VERCEl终极CORS解决方案 - 在serverless函数层面强制处理[m
+[31m-app.use((req, res, next) => {[m
+[31m-    // 强制设置CORS头，绕过所有可能的限制[m
+[31m-    res.setHeader('Access-Control-Allow-Origin', '*');[m
+[31m-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');[m
+[31m-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');[m
+[31m-    res.setHeader('Access-Control-Allow-Credentials', 'false'); // VERCELOPEN预核问题[m
+[31m-    res.setHeader('Access-Control-Max-Age', '86400');[m
+[31m-    [m
+[31m-    // Vercel特殊处理 - 强制覆盖任何其他CORS设置[m
+[32m+[m[32m// ULTRA NUCLEAR CORS - 最高级别Vercel入口CORS拦截[m
+[32m+[m[32mapp.use((req: any, res: any, next: any) => {[m
+     const origin = req.headers.origin;[m
+[31m-    if (origin) {[m
+[32m+[m[32m    console.log('🚀 VERCEL API 入口CORS处理:', origin, req.method, req.url);[m
+[32m+[m[41m    [m
+[32m+[m[32m    // ULTRA强制性CORS头部设置 - 进入的最优先处理[m
+[32m+[m[32m    const corsHeaders = {[m
+[32m+[m[32m        'Access-Control-Allow-Origin': origin || '*',[m
+[32m+[m[32m        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD',[m
+[32m+[m[32m        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma',[m
+[32m+[m[32m        'Access-Control-Allow-Credentials': 'true',[m
+[32m+[m[32m        'Access-Control-Max-Age': '86400',[m
+[32m+[m[32m        'Vary': 'Origin'[m
+[32m+[m[32m    };[m
+[32m+[m[41m    [m
+[32m+[m[32m    // 强制应用每个CORS头[m
+[32m+[m[32m    Object.entries(corsHeaders).forEach(([key, value]) => {[m
+[32m+[m[32m        res.setHeader(key, value);[m
+[32m+[m[32m    });[m
+[32m+[m[41m    [m
+[32m+[m[32m    // GitHub Pages特殊强化路径处理[m
+[32m+[m[32m    if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {[m
+         res.setHeader('Access-Control-Allow-Origin', origin);[m
+[32m+[m[32m        console.log('🎯 Vercel GitHub Pages特殊处理:', origin);[m
+     }[m
+     [m
+[31m-    // 立即处理OPTIONS请求[m
+[32m+[m[32m    // OPTIONS预检立即响应[m
+     if (req.method === 'OPTIONS') {[m
+[31m-        console.log('🚀 VERCEL CORS OPTIONS处理:', origin);[m
+[31m-        return res.status(200).json({ [m
+[31m-            success: true, [m
+[31m-            cors: 'vercel-enabled',[m
+[31m-            origin: origin [m
+[32m+[m[32m        console.log('🚀 VERCEL OPTIONS响应成功:', origin);[m
+[32m+[m[32m        return res.status(200).json({[m
+[32m+[m[32m            success: true,[m
+[32m+[m[32m            message: 'CORS预检通过',[m
+[32m+[m[32m            origin: origin,[m
+[32m+[m[32m            handled_by: 'vercel_handler'[m
+         });[m
+     }[m
+     [m
+[31m-    console.log('💥 Vercel CORS设置完成:', origin, req.method, req.path);[m
+     next();[m
+ });[m
+ [m
+[32m+[m[32m// 导出Express应用给Vercel[m
+ export default app;[m
+[1mdiff --git a/client/src/services/api.ts b/client/src/services/api.ts[m
+[1mindex 278b973..0251426 100644[m
+[1m--- a/client/src/services/api.ts[m
+[1m+++ b/client/src/services/api.ts[m
+[36m@@ -33,7 +33,13 @@[m [mconst api = axios.create({[m
+ const testApiAvailability = async () => {[m
+     try {[m
+         console.log('🔍 正在检测后端健康状态...');[m
+[31m-        const response = await axios.get(`${baseURL}/health`, { timeout: 10000 });[m
+[32m+[m[32m        const response = await axios.get(`${baseURL}/health`, {[m[41m [m
+[32m+[m[32m            timeout: 10000,[m
+[32m+[m[32m            headers: {[m
+[32m+[m[32m                'Accept': 'application/json',[m
+[32m+[m[32m                'Content-Type': 'application/json'[m
+[32m+[m[32m            }[m
+[32m+[m[32m        });[m
+         console.log('✅ 后端健康检测成功:', response.data);[m
+         return true;[m
+     } catch (error: any) {[m
+[36m@@ -68,11 +74,14 @@[m [mapi.interceptors.response.use([m
+     async (error) => {[m
+         console.error('API请求失败:', error);[m
+         [m
+[31m-        // 自动回退到模拟数据（如果是CORS错误或在GitHub Pages环境）[m
+[31m-        if (error.code === 'ERR_NETWORK' || error.name === 'AxiosError') {[m
+[31m-            const isGitHubPages = window.location.hostname.includes('github.io');[m
+[32m+[m[32m        // 处理CORS错误和401认证错误[m
+[32m+[m[32m        const isNetworkError = error.code === 'ERR_NETWORK' || error.name === 'AxiosError';[m
+[32m+[m[32m        const isUnauthorized = error.response?.status === 401;[m
+[32m+[m[32m        const isGitHubPages = window.location.hostname.includes('github.io');[m
+[32m+[m[41m        [m
+[32m+[m[32m        if (isNetworkError || isUnauthorized) {[m
+             if (isGitHubPages) {[m
+[31m-                console.log('🔄 CORS错误检测，自动切换到模拟数据模式');[m
+[32m+[m[32m                console.log('🔄 CORS/401错误检测，自动切换到模拟数据模式');[m
+                 // 这里将在后续的API拦截器中处理挂起的请求[m
+                 return Promise.reject(error);[m
+             }[m
+[1mdiff --git a/server/src/routes.ts b/server/src/routes.ts[m
+[1mindex 7481750..6c897b6 100644[m
+[1m--- a/server/src/routes.ts[m
+[1m+++ b/server/src/routes.ts[m
+[36m@@ -52,20 +52,30 @@[m [mexport function setupRoutes(app: Express): void {[m
+         next();[m
+     });[m
+ [m
+[31m-    // 全局响应中间件：强化每个响应强制CORS[m
+[32m+[m[32m    // 超强力响应拦截CORS - 强制覆盖所有响应[m
+     app.use((req, res, next) => {[m
+[31m-        // 拦截响应方法[m
+[32m+[m[32m        const origin = req.headers.origin;[m
+         const originalSend = res.send;[m
+         const originalJson = res.json;[m
+[31m-        const origin = req.headers.origin;[m
+         [m
+[32m+[m[32m        // ULTRA CORS响应拦截器[m
+         res.send = function(data: any) {[m
+             if (!res.headersSent) {[m
+[32m+[m[32m                // Vercel环境最终的CORS强制设置[m
+                 res.setHeader('Access-Control-Allow-Origin', origin || '*');[m
+[32m+[m[32m                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');[m
+[32m+[m[32m                res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');[m
+                 res.setHeader('Access-Control-Allow-Credentials', 'true');[m
+[32m+[m[32m                res.setHeader('Access-Control-Max-Age', '86400');[m
+                 res.setHeader('Vary', 'Origin');[m
+[32m+[m[41m                [m
+[32m+[m[32m                // 特别强化GitHub Pages CORS头[m
+[32m+[m[32m                if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {[m
+[32m+[m[32m                    res.setHeader('Access-Control-Allow-Origin', origin);[m
+[32m+[m[32m                }[m
+[32m+[m[41m                [m
+                 if (process.env.VERCEL) {[m
+[31m-                    res.setHeader('Access-Control-Allow-Origin', '*');[m
+[32m+[m[32m                    res.setHeader('Access-Control-Allow-Origin', origin || '*');[m
+                 }[m
+             }[m
+             return originalSend.call(this, data);[m
+[36m@@ -73,10 +83,21 @@[m [mexport function setupRoutes(app: Express): void {[m
+         [m
+         res.json = function(obj: any) {[m
+             if (!res.headersSent) {[m
+[32m+[m[32m                // 确保JSON响应携带完整CORS信息[m
+                 res.setHeader('Access-Control-Allow-Origin', origin || '*');[m
+[32m+[m[32m                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');[m
+[32m+[m[32m                res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');[m
+                 res.setHeader('Access-Control-Allow-Credentials', 'true');[m
+[32m+[m[32m                res.setHeader('Access-Control-Max-Age', '86400');[m
+[32m+[m[32m                res.setHeader('Vary', 'Origin');[m
+[32m+[m[41m                [m
+[32m+[m[32m                // GitHub Pages特别强化[m
+[32m+[m[32m                if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {[m
+[32m+[m[32m                    res.setHeader('Access-Control-Allow-Origin', origin);[m
+[32m+[m[32m                }[m
+[32m+[m[41m                [m
+                 if (process.env.VERCEL) {[m
+[31m-                    res.setHeader('Access-Control-Allow-Origin', '*');[m
+[32m+[m[32m                    res.setHeader('Access-Control-Allow-Origin', origin || '*');[m
+                 }[m
+             }[m
+             return originalJson.call(this, obj);[m
+[36m@@ -85,22 +106,41 @@[m [mexport function setupRoutes(app: Express): void {[m
+         next();[m
+     });[m
+ [m
+[31m-    // 健康检查 - 强化CORS测试[m
+[32m+[m[32m    // 健康检查 - 强化CORS测试[m[41m  [m
+     app.get('/api/health', (req: Request, res: Response) => {[m
+         const origin = req.headers.origin;[m
+[31m-        console.log('🏥 健康检查请求:', origin);[m
+[31m-        res.header('Access-Control-Allow-Origin', origin || '*');[m
+[31m-        res.header('Access-Control-Allow-Credentials', 'true');[m
+[31m-        res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');[m
+[31m-        res.json({ [m
+[32m+[m[32m        console.log('🏥 健康检查请求:', origin, 'Method:', req.method);[m
+[32m+[m[41m        [m
+[32m+[m[32m        // 手动强制CORS头确保绝对成功[m
+[32m+[m[32m        res.setHeader('Access-Control-Allow-Origin', origin || '*');[m
+[32m+[m[32m        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');[m
+[32m+[m[32m        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');[m
+[32m+[m[32m        res.setHeader('Access-Control-Allow-Credentials', 'true');[m
+[32m+[m[32m        res.setHeader('Access-Control-Max-Age', '86400');[m
+[32m+[m[32m        res.setHeader('Vary', 'Origin');[m
+[32m+[m[41m        [m
+[32m+[m[32m        // GitHub Pages特别检查[m
+[32m+[m[32m        if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {[m
+[32m+[m[32m            res.setHeader('Access-Control-Allow-Origin', origin);[m
+[32m+[m[32m            console.log('🎯 健康检查GitHub Pages CORS:', origin);[m
+[32m+[m[32m        }[m
+[32m+[m[41m        [m
+[32m+[m[32m        const responseData = {[m[41m [m
+             success: true, [m
+             message: 'GitHub自动化系统运行正常',[m
+             origin: origin,[m
+             cors_enabled: true,[m
+[31m-            timestamp: new Date().toISOString()[m
+[31m-        });[m
+[32m+[m[32m            vercel_env: !!process.env.VERCEL,[m
+[32m+[m[32m            github_token_set: !!process.env.GITHUB_TOKEN,[m
+[32m+[m[32m            timestamp: new Date().toISOString(),[m
+[32m+[m[32m            api_status: 'online'[m
+[32m+[m[32m        };[m
+[32m+[m[41m        [m
+[32m+[m[32m        console.log('🏥 健康检查响应准备发送:', responseData);[m
+[32m+[m[32m        res.status(200).json(responseData);[m
+     });[m
+ [m
+[32m+[m
+     // 同步用户starred仓库[m
+     app.post('/api/sync/:username', async (req: Request, res: Response) => {[m
+         try {[m
+[36m@@ -136,11 +176,12 @@[m [mexport function setupRoutes(app: Express): void {[m
+             };[m
+             res.json(response);[m
+         } catch (error: any) {[m
+[32m+[m[32m            console.error('获取仓库列表失败:', error.message);[m
+             const response: ApiResponse<null> = {[m
+                 success: false,[m
+[31m-                error: error.message,[m
+[32m+[m[32m                error: error.message || '获取仓库列表失败，数据库连接异常',[m
+             };[m
+[31m-            res.status(500).json(response);[m
+[32m+[m[32m            res.status(200).json(response); // 返回200状态码但success: false，前端可处理降级[m
+         }[m
+     });[m
+ [m
+[36m@@ -183,7 +224,7 @@[m [mexport function setupRoutes(app: Express): void {[m
+         }[m
+     });[m
+ [m
+[31m-    // 获取统计信息[m
+[32m+[m[32m    // 获取统计信息[m[41m  [m
+     app.get('/api/statistics', async (req: Request, res: Response) => {[m
+         try {[m
+             const statistics = await statisticsService.getStatistics();[m
+[36m@@ -193,11 +234,13 @@[m [mexport function setupRoutes(app: Express): void {[m
+             };[m
+             res.json(response);[m
+         } catch (error: any) {[m
+[32m+[m[32m            console.error('获取统计信息失败:', error.message);[m
+[32m+[m[32m            // 优雅降级到模拟数据或错误[m
+             const response: ApiResponse<null> = {[m
+                 success: false,[m
+[31m-                error: error.message,[m
+[32m+[m[32m                error: error.message || '获取统计信息失败，可能GitHub Token未正确配置',[m
+             };[m
+[31m-            res.status(500).json(response);[m
+[32m+[m[32m            res.status(200).json(response); // 改为200以避免401错误，前端会检测success字段[m
+         }[m
+     });[m
+ [m

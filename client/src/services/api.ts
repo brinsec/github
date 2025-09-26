@@ -33,7 +33,13 @@ const api = axios.create({
 const testApiAvailability = async () => {
     try {
         console.log('🔍 正在检测后端健康状态...');
-        const response = await axios.get(`${baseURL}/health`, { timeout: 10000 });
+        const response = await axios.get(`${baseURL}/health`, { 
+            timeout: 10000,
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
         console.log('✅ 后端健康检测成功:', response.data);
         return true;
     } catch (error: any) {
@@ -68,11 +74,14 @@ api.interceptors.response.use(
     async (error) => {
         console.error('API请求失败:', error);
         
-        // 自动回退到模拟数据（如果是CORS错误或在GitHub Pages环境）
-        if (error.code === 'ERR_NETWORK' || error.name === 'AxiosError') {
-            const isGitHubPages = window.location.hostname.includes('github.io');
+        // 处理CORS错误和401认证错误
+        const isNetworkError = error.code === 'ERR_NETWORK' || error.name === 'AxiosError';
+        const isUnauthorized = error.response?.status === 401;
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        
+        if (isNetworkError || isUnauthorized) {
             if (isGitHubPages) {
-                console.log('🔄 CORS错误检测，自动切换到模拟数据模式');
+                console.log('🔄 CORS/401错误检测，自动切换到模拟数据模式');
                 // 这里将在后续的API拦截器中处理挂起的请求
                 return Promise.reject(error);
             }
