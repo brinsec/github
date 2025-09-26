@@ -24,15 +24,23 @@ const api = axios.create({
     timeout: 30000,
 });
 
-// 检测API是否可用的辅助函数 (当前未使用)
-// const testApiAvailability = async () => {
-//     try {
-//         const response = await axios.get(`${baseURL}/health`, { timeout: 5000 });
-//         return response.status === 200;
-//     } catch (error) {
-//         return false;
-//     }
-// };
+// 检测API是否可用的辅助函数
+const testApiAvailability = async () => {
+    try {
+        console.log('🔍 正在检测后端健康状态...');
+        const response = await axios.get(`${baseURL}/health`, { timeout: 10000 });
+        console.log('✅ 后端健康检测成功:', response.data);
+        return true;
+    } catch (error) {
+        console.error('❌ 后端健康检测失败:', error.message);
+        return false;
+    }
+};
+
+// 在GitHub Pages环境中自动进行后端健康检测
+if (isGitHubPages) {
+    testApiAvailability();
+}
 
 // 请求拦截器
 api.interceptors.request.use(

@@ -27,38 +27,61 @@ export function setupRoutes(app: Express): void {
     const projectDiscoveryService = new ProjectDiscoveryService();
     const dailySearchService = new DailySearchService();
 
-    // 终极CORS中间件：强制设置每个响应头
+    // NUCLEAR CORS ROUTING：路由级别强制CORS
     app.use((req, res, next) => {
         const origin = req.headers.origin;
-        console.log('📡 路由CORS处理:', origin, req.method, req.path);
+        console.log('💣 NUCLEAR ROUTING CORS:', origin, req.method, req.path);
         
-        // 设置所有必要的CORS头
-        res.header('Access-Control-Allow-Origin', origin || '*');
-        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Access-Control-Max-Age', '86400');
+        // 强制每个响应设置CORS头
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Max-Age', '86400');
         
-        // 对OPTIONS请求立即响应
+        // Vercel环境特殊
+        if (process.env.VERCEL) {
+            res.setHeader('Access-Control-Allow-Origin', '*');
+        }
+        
         if (req.method === 'OPTIONS') {
-            console.log('🔧 OPTIONS请求处理完成');
-            return res.status(200).json({ success: true, cors: 'enabled' });
+            console.log('💥 OPTIONS路由处理');
+            return res.status(200).setHeader('Content-Type', 'application/json').json({ success: true });
         }
         
         next();
     });
 
-    // 全局响应中间件：为所有响应自动添加CORS头
+    // 全局响应中间件：强化每个响应强制CORS
     app.use((req, res, next) => {
+        // 拦截响应方法
+        const originalSend = res.send;
         const originalJson = res.json;
+        const origin = req.headers.origin;
+        
+        res.send = function(data: any) {
+            if (!res.headersSent) {
+                res.setHeader('Access-Control-Allow-Origin', origin || '*');
+                res.setHeader('Access-Control-Allow-Credentials', 'true');
+                res.setHeader('Vary', 'Origin');
+                if (process.env.VERCEL) {
+                    res.setHeader('Access-Control-Allow-Origin', '*');
+                }
+            }
+            return originalSend.call(this, data);
+        };
+        
         res.json = function(obj: any) {
             if (!res.headersSent) {
-                res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-                res.header('Access-Control-Allow-Credentials', 'true');
-                res.header('Vary', 'Origin');
+                res.setHeader('Access-Control-Allow-Origin', origin || '*');
+                res.setHeader('Access-Control-Allow-Credentials', 'true');
+                if (process.env.VERCEL) {
+                    res.setHeader('Access-Control-Allow-Origin', '*');
+                }
             }
             return originalJson.call(this, obj);
         };
+        
         next();
     });
 

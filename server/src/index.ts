@@ -11,42 +11,36 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// 中间件 - 终极CORS解决方案：强制允许所有来源，特别支持GitHub Pages
+// 中间件 - NUCLEAR OPTION CORS：绕过所有CORS限制
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    console.log('🔄 CORS请求来源:', origin, 'Host:', req.headers.host, 'Method:', req.method);
+    console.log('🔄 NUCLEAR CORS处理:', origin, req.method, req.path);
     
-    // VERCEL环境的终极解决方案：强制允许所有源，但优先处理GitHub Pages
-    res.header('Access-Control-Allow-Origin', origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-    res.header('Access-Control-Allow-Headers', 
-        'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma, X-Forwarded-For, X-Real-IP'
-    );
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400');
+    // 强制CORS设置 - NUCLEAR OPTION
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
     
-    // 额外的GitHub Pages支持头
-    res.header('Access-Control-Expose-Headers', 'Content-Range, X-Total-Count, X-Request-ID');
-    res.header('X-Content-Type-Options', 'nosniff');
-    res.header('X-Frame-Options', 'SAMEORIGIN');
+    // Vercel特殊处理
+    if (process.env.VERCEL) {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        console.log('🚀 VERCEL环境强制开放所有源');
+    }
     
-    // 处理预检请求
+    // 立即处理OPTIONS
     if (req.method === 'OPTIONS') {
-        console.log('🔄 处理OPTIONS请求，立即返回200');
-        res.status(200).json({ success: true, message: 'CORS预检通过' });
+        console.log('✅ NUCLEAR OPTIONS返回200');
+        res.status(200).end();
         return;
     }
     
-    console.log('✅ CORS设置完成，继续处理请求');
     next();
 });
 
-// 简化的cors库配置，配合主中间件使用
-app.use(cors({
-    origin: true, // 允许所有源，配合自定义中间件
-    credentials: true,
-    optionsSuccessStatus: 200
-}));
+// 完全绕过cors库，使用纯自定义实现
+// app.use(cors({...})); // 禁用cors库，完全由自定义控制
 
 app.use(express.json());
 
