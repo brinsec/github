@@ -1,122 +1,69 @@
-import axios, { AxiosResponse } from 'axios';
-import { 
-    saveDailySearchRecord, 
-    DailySearchRecord, 
-    SearchStats,
-    calculateMonthlyAggregations,
-    calculateYearlyAggregations,
-    saveAggregatedSearchData,
-    AggregatedSearchData 
-} from '../database';
-import fs from 'fs/promises';
-import path from 'path';
-
-export interface DailySearchResult {
-    id: string;
-    searchDate: string;
-    searchQuery: string;
-    results: GitHubRepository[];
-    stats: {
-        totalFound: number;
-        newlyDiscovered: number;
-        averageStars: number;
-        topLanguages: Array<{ name: string; count: number }>;
-    };
-    reportPath?: string;
-}
-
-interface GitHubApiResponse {
-    items: GitHubRepository[];
-    total_count: number;
-    incomplete_results: boolean;
-}
-
-interface GitHubRepository {
-    id: number;
-    name: string;
-    full_name: string;
-    description: string;
-    html_url: string;
-    language: string;
-    stargazers_count: number;
-    forks_count: number;
-    created_at: string;
-    updated_at: string;
-    topics: string[];
-    size: number;
-    watchers_count: number;
-    open_issues_count: number;
-}
-
-export class DailySearchService {
-    private baseURL = 'https://api.github.com';
-    private token: string;
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DailySearchService = void 0;
+const axios_1 = __importDefault(require("axios"));
+const database_1 = require("../database");
+const promises_1 = __importDefault(require("fs/promises"));
+const path_1 = __importDefault(require("path"));
+class DailySearchService {
     constructor() {
+        this.baseURL = 'https://api.github.com';
         this.token = process.env.GITHUB_TOKEN || '';
         console.log('🔍 每日搜索服务初始化');
         if (!this.token) {
             console.warn('⚠️ GITHUB_TOKEN未设置，搜索功能受限');
-        } else {
+        }
+        else {
             console.log('✅ GitHub Token已配置，启用真实搜索功能');
         }
     }
-
-    private getHeaders() {
-        const headers: Record<string, string> = {
+    getHeaders() {
+        const headers = {
             'Accept': 'application/vnd.github.v3+json',
             'User-Agent': 'GitHub-Daily-Search-System',
         };
-
         if (this.token) {
             headers['Authorization'] = `token ${this.token}`;
         }
-
         return headers;
     }
-
     /**
      * 每日搜索流行项目和发现新项目
      */
-    async performDailySearch(): Promise<DailySearchResult[]> {
+    async performDailySearch() {
         console.log('🚀 开始每日自动搜索...');
-        
         const searchQueries = this.getSearchQueries();
-        const results: DailySearchResult[] = [];
-
+        const results = [];
         for (const query of searchQueries) {
             try {
                 console.log(`🔍 搜索查询: ${query}`);
                 const result = await this.searchRepositories(query);
                 results.push(result);
-                
                 // 避免API限制，添加延迟
                 await this.delay(2000);
-            } catch (error) {
+            }
+            catch (error) {
                 console.error(`❌ 搜索查询失败: ${query}`, error);
             }
         }
-
         // 生成每日报告
         await this.generateDailyReport(results);
-        
         // 保存结果到数据库
         await this.saveDailySearchRecords(results);
-
         // 计算并保存聚合数据
         await this.updateAggregatedData(results);
-
         console.log('✅ 每日搜索完成');
         return results;
     }
-
     /**
      * 获取每日搜索查询列表
      */
-    private getSearchQueries(): string[] {
+    getSearchQueries() {
         const today = new Date();
         const dateStr = today.toISOString().split('T')[0];
-        
         return [
             // 流行项目搜索
             `stars:>1000 created:${dateStr.split('-')[0]}-${String(today.getMonth() + 1).padStart(2, '0')}`,
@@ -137,35 +84,29 @@ export class DailySearchService {
             `stars:>10 created:>=${dateStr} "blockchain"`
         ];
     }
-
     /**
      * 搜索仓库
      */
-    async searchRepositories(query: string): Promise<DailySearchResult> {
+    async searchRepositories(query) {
+        const db = await (0, database_1.getLowdbDatabase)();
         const today = new Date().toISOString().split('T')[0];
         const searchDate = `${today}T00:00:00Z`;
-        
         console.log(`🔎 执行搜索: ${query}`);
-        
         try {
-            const response: AxiosResponse<GitHubApiResponse> = await axios.get(
-                `${this.baseURL}/search/repositories`,
-                {
-                    headers: this.getHeaders(),
-                    params: {
-                        q: query,
-                        sort: 'stars',
-                        order: 'desc',
-                        per_page: 100 // GitHub API限制每页最多100个
-                    }
+            const response = await axios_1.default.get(`${this.baseURL}/search/repositories`, {
+                headers: this.getHeaders(),
+                params: {
+                    q: query,
+                    sort: 'stars',
+                    order: 'desc',
+                    per_page: 100 // GitHub API限制每页最多100个
                 }
-            );
-
+            });
             const repositories = response.data.items || [];
-            
-            // 检查哪些是真正新发现的（简化实现）
-            const newlyDiscovered = repositories.slice(0, Math.min(10, repositories.length)); // 假设一些是新发现的
-            
+            // 检查哪些是真正新发现的
+            const existingRepos = await db.get('searchResults').value();
+            const knownRepos = new Set(existingRepos?.map((r) => r.results.map(repo => repo.id)).flat() || []);
+            const newlyDiscovered = repositories.filter(repo => !knownRepos.has(repo.id));
             // 统计信息
             const stats = {
                 totalFound: repositories.length,
@@ -173,95 +114,80 @@ export class DailySearchService {
                 averageStars: repositories.reduce((sum, repo) => sum + repo.stargazers_count, 0) / repositories.length || 0,
                 topLanguages: this.getLanguageStats(repositories)
             };
-
-            const result: DailySearchResult = {
-                id: `search_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            const result = {
+                id: `search_${Date.now()}`,
                 searchDate,
                 searchQuery: query,
                 results: repositories,
                 stats
             };
-
             return result;
-        } catch (error: any) {
+        }
+        catch (error) {
             console.error('GitHub搜索API错误:', error.message);
             throw error;
         }
     }
-
     /**
      * 获取语言统计
      */
-    private getLanguageStats(repositories: GitHubRepository[]): Array<{ name: string; count: number }> {
-        const languages: Record<string, number> = {};
-        
+    getLanguageStats(repositories) {
+        const languages = {};
         repositories.forEach(repo => {
             if (repo.language) {
                 languages[repo.language] = (languages[repo.language] || 0) + 1;
             }
         });
-
         return Object.entries(languages)
             .map(([name, count]) => ({ name, count }))
             .sort((a, b) => b.count - a.count)
             .slice(0, 10);
     }
-
     /**
      * 生成每日搜索报告
      */
-    private async generateDailyReport(results: DailySearchResult[]): Promise<void> {
+    async generateDailyReport(results) {
         const today = new Date().toISOString().split('T')[0];
-        const reportDir = path.join(process.cwd(), 'reports');
-        const reportFile = path.join(reportDir, `daily_search_${today}.md`);
-
+        const reportDir = path_1.default.join(process.cwd(), 'reports');
+        const reportFile = path_1.default.join(reportDir, `daily_search_${today}.md`);
         try {
-            await fs.mkdir(reportDir, { recursive: true });
-        } catch (error) {
+            await promises_1.default.mkdir(reportDir, { recursive: true });
+        }
+        catch (error) {
             // Directory might already exist
         }
-
         const reportContent = this.generateReportMarkdown(results);
-        
         try {
-            await fs.writeFile(reportFile, reportContent, 'utf8');
+            await promises_1.default.writeFile(reportFile, reportContent, 'utf8');
             console.log(`📄 每日报告已生成: ${reportFile}`);
-            
             // 更新结果中的报告路径
             results.forEach(result => {
                 result.reportPath = reportFile;
             });
-        } catch (error) {
+        }
+        catch (error) {
             console.error('报告文件写入错误:', error);
         }
     }
-
     /**
      * 生成Markdown报告内容
      */
-    private generateReportMarkdown(results: DailySearchResult[]): string {
+    generateReportMarkdown(results) {
         const today = new Date().toISOString().split('T')[0];
-        
         let markdown = `# 每日GitHub项目发现报告 - ${today}\n\n`;
-        
         markdown += `## 🔍 搜索概览\n\n`;
         markdown += `- **搜索次数**: ${results.length}\n`;
-        
         const totalProjects = results.reduce((sum, result) => sum + result.stats.totalFound, 0);
         const totalNew = results.reduce((sum, result) => sum + result.stats.newlyDiscovered, 0);
-        
         markdown += `- **发现项目总数**: ${totalProjects}\n`;
         markdown += `- **新发现项目**: ${totalNew}\n`;
         markdown += `- **发现率**: ${((totalNew / totalProjects) * 100).toFixed(1)}%\n\n`;
-
         markdown += `## 🔎 搜索详情\n\n`;
-
         results.forEach((result, index) => {
             markdown += `### ${index + 1}. ${result.searchQuery}\n\n`;
             markdown += `- **结果数量**: ${result.stats.totalFound}\n`;
             markdown += `- **新发现**: ${result.stats.newlyDiscovered}\n`;
             markdown += `- **平均Stars**: ${result.stats.averageStars.toFixed(1)}\n\n`;
-
             if (result.stats.topLanguages.length > 0) {
                 markdown += `**热门语言分布**:\n`;
                 result.stats.topLanguages.slice(0, 5).forEach(lang => {
@@ -269,7 +195,6 @@ export class DailySearchService {
                 });
                 markdown += '\n';
             }
-
             // 展示top 5 项目
             markdown += `**🔥 热门项目 Top 5**:\n\n`;
             result.results.slice(0, 5).forEach((repo, idx) => {
@@ -281,25 +206,21 @@ export class DailySearchService {
                 }
                 markdown += '\n';
             });
-
             markdown += '---\n\n';
         });
-
         markdown += `## 📊 总结\n\n`;
         markdown += `本次搜索发现了多个有潜力的新项目，涉及AI、机器学习、前端、区块链等多个技术领域。`;
         markdown += `建议关注这些项目的后续发展动态。\n\n`;
         markdown += `---\n\n*报告生成时间: ${new Date().toLocaleString()}*`;
-
         return markdown;
     }
-
     /**
      * 保存每日搜索记录到数据库
      */
-    private async saveDailySearchRecords(results: DailySearchResult[]): Promise<void> {
+    async saveDailySearchRecords(results) {
         try {
             for (const result of results) {
-                const record: DailySearchRecord = {
+                const record = {
                     id: result.id,
                     searchDate: result.searchDate,
                     searchQuery: result.searchQuery,
@@ -315,75 +236,68 @@ export class DailySearchService {
                     createdAt: new Date().toISOString(),
                     reportPath: result.reportPath
                 };
-                
-                await saveDailySearchRecord(record);
+                await (0, database_1.saveDailySearchRecord)(record);
             }
             console.log(`💾 已保存到数据库: ${results.length}个搜索记录`);
-        } catch (error) {
+        }
+        catch (error) {
             console.error('保存每日搜索记录失败:', error);
         }
     }
-
     /**
      * 更新聚合数据
      */
-    private async updateAggregatedData(results: DailySearchResult[]): Promise<void> {
+    async updateAggregatedData(results) {
         try {
-            if (results.length === 0) return;
-            
+            if (results.length === 0)
+                return;
             const today = results[0].searchDate.substring(0, 10);
             const month = today.substring(0, 7); // YYYY-MM
             const year = today.substring(0, 4); // YYYY
-            
             // 计算当日聚合数据
-            const dailyData = await calculateMonthlyAggregations(month);
-            await saveAggregatedSearchData('daily', today, dailyData);
-            
+            const dailyData = await (0, database_1.calculateMonthlyAggregations)(month);
+            await (0, database_1.saveAggregatedSearchData)('daily', today, dailyData);
             // 重新计算月度数据
-            const monthlyData = await calculateMonthlyAggregations(month);
-            await saveAggregatedSearchData('monthly', month, monthlyData);
-            
+            const monthlyData = await (0, database_1.calculateMonthlyAggregations)(month);
+            await (0, database_1.saveAggregatedSearchData)('monthly', month, monthlyData);
             // 重新计算年度数据  
-            const yearlyData = await calculateYearlyAggregations(year);
-            await saveAggregatedSearchData('yearly', year, yearlyData);
-            
+            const yearlyData = await (0, database_1.calculateYearlyAggregations)(year);
+            await (0, database_1.saveAggregatedSearchData)('yearly', year, yearlyData);
             console.log('📊 聚合数据已更新');
-        } catch (error) {
+        }
+        catch (error) {
             console.error('更新聚合数据失败:', error);
         }
     }
-
     /**
      * 提取热门话题标签
      */
-    private extractTopTopics(repositories: GitHubRepository[]): Array<{ name: string; count: number }> {
-        const topicCount: { [key: string]: number } = {};
-        
+    extractTopTopics(repositories) {
+        const topicCount = {};
         repositories.forEach(repo => {
             repo.topics.forEach(topic => {
                 topicCount[topic] = (topicCount[topic] || 0) + 1;
             });
         });
-
         return Object.entries(topicCount)
             .map(([name, count]) => ({ name, count }))
             .sort((a, b) => b.count - a.count)
             .slice(0, 10);
     }
-
     /**
      * 延迟方法
      */
-    private delay(ms: number): Promise<void> {
+    delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
-
     /**
      * 获取历史搜索结果
      */
-    async getSearchHistory(limit = 10): Promise<DailySearchResult[]> {
-        const db = await getLowdbDatabase();
+    async getSearchHistory(limit = 10) {
+        const db = await (0, database_1.getLowdbDatabase)();
         const results = db.get('searchResults').value() || [];
         return results.slice(-limit);
     }
 }
+exports.DailySearchService = DailySearchService;
+//# sourceMappingURL=dailySearchService.js.map

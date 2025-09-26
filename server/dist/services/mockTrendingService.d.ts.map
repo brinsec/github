@@ -1,0 +1,1 @@
+{"version":3,"file":"mockTrendingService.d.ts","sourceRoot":"","sources":["../../src/services/mockTrendingService.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,gBAAgB,EAAE,MAAM,oBAAoB,CAAC;AAEtD,qBAAa,mBAAmB;IAC5B;;OAEG;IACH,iBAAiB,IAAI,gBAAgB,EAAE;IAyFvC;;OAEG;IACH,kBAAkB,IAAI,gBAAgB,EAAE;IA6DxC;;OAEG;IACH,oBAAoB,IAAI,gBAAgB,EAAE;IA6D1C;;OAEG;IACH,iBAAiB,IAAI,gBAAgB,EAAE;CAgJ1C"}

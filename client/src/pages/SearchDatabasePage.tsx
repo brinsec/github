@@ -115,9 +115,8 @@ const SearchDatabasePage: React.FC = () => {
             }
         } catch (error) {
             console.error('获取搜索数据失败:', error);
-            // 回退到模拟数据
             setSearchRecords([]);
-            // 可以添加模拟数据结构
+            setAggregatedData(null);
         } finally {
             setLoading(false);
         }
