@@ -11,8 +11,33 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// 中间件
-app.use(cors());
+// 中间件 - 配置CORS允许GitHub Pages域名
+app.use(cors({
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:5173', 
+        'https://brinsec.github.io',
+        /^https:\/\/.*\.github\.io$/
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// 添加全局CORS头
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://brinsec.github.io');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+    next();
+});
+
 app.use(express.json());
 
 // 初始化数据库并启动服务器
