@@ -4,6 +4,10 @@
     {
       "src": "api/health.ts",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -15,13 +19,5 @@
       "src": "/api/(.*)",
       "dest": "api/index.ts"
     }
-  ],
-  "functions": {
-    "api/health.ts": {
-      "maxDuration": 10
-    },
-    "api/index.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
