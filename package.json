@@ -17,7 +17,9 @@
         "docker:build": "docker build -t github-automation .",
         "docker:run": "docker run -p 3001:3001 -e GITHUB_TOKEN=$GITHUB_TOKEN github-automation",
         "deploy:vercel": "vercel --prod",
-        "deploy:docker": "docker-compose up -d"
+        "deploy:docker": "docker-compose up -d",
+        "deploy:simple": "node scripts/simple-deploy.js",
+        "health-check": "node scripts/health-check.js"
     },
     "keywords": ["github", "automation", "classification", "statistics"],
     "author": "",
