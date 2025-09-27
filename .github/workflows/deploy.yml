@@ -5,9 +5,23 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# 设置权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 确保只有一个部署作业运行
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - name: Checkout
@@ -36,9 +50,14 @@ jobs:
       run: |
         node scripts/build-for-github-pages.js
         
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+      
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./client/dist
-        cname: brinsec.github.io
+        path: ./client/dist
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

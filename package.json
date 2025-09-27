@@ -11,6 +11,7 @@
         "build:client": "cd client && pnpm run build",
         "build:server": "cd server && pnpm run build",
         "build:github-pages": "pnpm run build && node scripts/build-for-github-pages.js",
+        "deploy:github-pages": "node scripts/manual-deploy-to-github-pages.js",
         "start": "cd server && pnpm run start",
         "install:all": "pnpm install && cd server && pnpm install && cd ../client && pnpm install",
         "docker:build": "docker build -t github-automation .",
