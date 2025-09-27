@@ -17,7 +17,7 @@ const buildForGitHubPages = () => {
         // 替换API基础URL为Vercel API的路径
         content = content.replace(
             /http:\/\/localhost:3001/g,
-            'https://github-automation-system.vercel.app'
+            'https://github-1svkvp049-brinsecs-projects.vercel.app'
         );
         
         fs.writeFileSync(indexPath, content);
