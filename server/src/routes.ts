@@ -31,11 +31,23 @@ export function setupRoutes(app: any): void {
     app.use((req: any, res: any, next: any) => {
         const origin = req.headers.origin;
         
+        // 允许的域名列表
+        const allowedOrigins = [
+            'https://brinsec.github.io',
+            'https://brinsecs-projects.vercel.app',
+            'http://localhost:3000',
+            'http://localhost:5173'
+        ];
+        
+        // 检查 origin 是否在允许列表中
+        const allowedOrigin = allowedOrigins.includes(origin as string) ? origin : '*';
+        
         // 确保CORS头部设置
-        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
         res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
         res.setHeader('Access-Control-Allow-Credentials', 'false');
+        res.setHeader('Access-Control-Max-Age', '86400');
         
         if (req.method === 'OPTIONS') {
             return res.status(200).json({ success: true });
@@ -57,12 +69,24 @@ export function setupRoutes(app: any): void {
             origin: origin,
             cors_enabled: true,
             vercel_env: !!process.env.VERCEL,
+            vercel_env_type: process.env.VERCEL_ENV || 'unknown',
             github_token_set: !!process.env.GITHUB_TOKEN,
+            node_env: process.env.NODE_ENV || 'unknown',
             timestamp: new Date().toISOString(),
-            api_status: 'online'
+            api_status: 'online',
+            database_type: process.env.VERCEL ? 'memory' : 'file'
         };
         
         res.status(200).json(responseData);
+    });
+
+    // 简单测试端点
+    app.get('/api/test', (req: Request, res: Response) => {
+        res.status(200).json({
+            success: true,
+            message: 'API测试成功',
+            timestamp: new Date().toISOString()
+        });
     });
 
 

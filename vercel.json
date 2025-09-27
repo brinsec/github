@@ -2,14 +2,26 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.ts",
+      "src": "api/health.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
+      "src": "/api/health",
+      "dest": "api/health.ts"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "api/index.ts"
     }
-  ]
+  ],
+  "functions": {
+    "api/health.ts": {
+      "maxDuration": 10
+    },
+    "api/index.ts": {
+      "maxDuration": 30
+    }
+  }
 }

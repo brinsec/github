@@ -15,8 +15,19 @@ const PORT = process.env.PORT || 3001;
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     
+    // 允许的域名列表
+    const allowedOrigins = [
+        'https://brinsec.github.io',
+        'https://brinsecs-projects.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:5173'
+    ];
+    
+    // 检查 origin 是否在允许列表中，或者允许所有 origin（开发环境）
+    const allowedOrigin = allowedOrigins.includes(origin as string) ? origin : '*';
+    
     // 设置CORS头部
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'false');
@@ -63,7 +74,10 @@ async function startServer() {
 
 if (process.env.VERCEL) {
     // Vercel环境，直接初始化数据库
-    initializeDatabase().catch(console.error);
+    initializeDatabase().catch(error => {
+        console.error('Vercel环境数据库初始化失败:', error);
+        // Vercel环境中不退出进程，使用内存数据库
+    });
 } else {
     // 本地环境，启动服务器
     startServer();

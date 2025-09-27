@@ -1,5 +1,6 @@
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
+import { Memory } from 'lowdb';
 import path from 'path';
 import fs from 'fs';
 import { GitHubRepository, Category, RepositoryClassification } from '../../shared/types';
@@ -99,10 +100,16 @@ export interface ProjectChange {
 
 const DB_PATH = process.env.DATABASE_PATH || './data/github_repos.json';
 
-// 确保数据目录存在
-const dbDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+// Vercel环境检测 - 使用内存数据库
+const isVercel = !!process.env.VERCEL;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// 确保数据目录存在（仅在非Vercel环境）
+if (!isVercel && !isProduction) {
+    const dbDir = path.dirname(DB_PATH);
+    if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+    }
 }
 
 // 数据库结构
@@ -120,8 +127,11 @@ interface DatabaseSchema {
     };
 }
 
-// 初始化数据库
-const adapter = new JSONFile<DatabaseSchema>(DB_PATH);
+// 初始化数据库 - 根据环境选择适配器
+const adapter = isVercel || isProduction 
+    ? new Memory<DatabaseSchema>() 
+    : new JSONFile<DatabaseSchema>(DB_PATH);
+
 const defaultData: DatabaseSchema = {
     repositories: [],
     categories: [],

@@ -8,7 +8,7 @@ let baseURL = '/api'; // 默认本地开发
 
 if (isGitHubPages) {
     // GitHub Pages环境，使用Vercel部署的API
-    baseURL = 'https://github-automation-system.vercel.app/api';
+    baseURL = 'https://github-3o192x6m4-brinsecs-projects.vercel.app/api';
     console.log('🌐 GitHub Pages环境，API地址:', baseURL);
 } else if (isVercel) {
     // Vercel环境，使用相对路径
