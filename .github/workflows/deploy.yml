@@ -1,20 +1,16 @@
-name: Deploy GitHub Automation System
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
       
     - name: Setup Node.js
@@ -25,26 +21,24 @@ jobs:
     - name: Setup pnpm
       uses: pnpm/action-setup@v2
       with:
-        version: latest
+        version: 9
         
-    - name: Install client dependencies
+    - name: Install dependencies
       run: |
-        cd client
         pnpm install
+        cd client && pnpm install
         
     - name: Build client
       run: |
-        cd client
-        pnpm run build
+        cd client && pnpm run build
         
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-      
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: ./client/dist
+    - name: Build for GitHub Pages
+      run: |
+        node scripts/build-for-github-pages.js
         
     - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./client/dist
+        cname: brinsec.github.io
