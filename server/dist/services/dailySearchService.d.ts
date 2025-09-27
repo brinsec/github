@@ -46,7 +46,7 @@ export declare class DailySearchService {
     /**
      * 搜索仓库
      */
-    private searchRepositories;
+    searchRepositories(query: string): Promise<DailySearchResult>;
     /**
      * 获取语言统计
      */

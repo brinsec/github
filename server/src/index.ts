@@ -8,30 +8,22 @@ import { setupRoutes } from './routes';
 // 加载环境变量
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const app = express();
+const app: express.Application = express();
 const PORT = process.env.PORT || 3001;
 
-// 中间件 - NUCLEAR OPTION CORS：绕过所有CORS限制
+// 简化的CORS中间件
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    console.log('🔄 NUCLEAR CORS处理:', origin, req.method, req.path);
     
-    // 强制CORS设置 - NUCLEAR OPTION
+    // 设置CORS头部
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'false');
     res.setHeader('Access-Control-Max-Age', '86400');
     
-    // Vercel特殊处理
-    if (process.env.VERCEL) {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        console.log('🚀 VERCEL环境强制开放所有源');
-    }
-    
-    // 立即处理OPTIONS
+    // 处理预检请求
     if (req.method === 'OPTIONS') {
-        console.log('✅ NUCLEAR OPTIONS返回200');
         res.status(200).end();
         return;
     }

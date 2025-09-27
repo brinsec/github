@@ -14,10 +14,10 @@ const buildForGitHubPages = () => {
     if (fs.existsSync(indexPath)) {
         let content = fs.readFileSync(indexPath, 'utf8');
         
-        // 替换API基础URL为GitHub Pages的路径
+        // 替换API基础URL为Vercel API的路径
         content = content.replace(
             /http:\/\/localhost:3001/g,
-            'https://your-username.github.io/github-automation-system'
+            'https://github-automation-system.vercel.app'
         );
         
         fs.writeFileSync(indexPath, content);

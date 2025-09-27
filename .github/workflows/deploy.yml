@@ -22,15 +22,20 @@ jobs:
       with:
         node-version: '18'
         
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: latest
+        
     - name: Install client dependencies
       run: |
         cd client
-        npm install
+        pnpm install
         
     - name: Build client
       run: |
         cd client
-        npm run build
+        pnpm run build
         
     - name: Setup Pages
       uses: actions/configure-pages@v4

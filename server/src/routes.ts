@@ -18,7 +18,7 @@ import {
 } from './database';
 import { ApiResponse } from '../../shared/types';
 
-export function setupRoutes(app: Express): void {
+export function setupRoutes(app: any): void {
     const githubService = new GitHubService();
     const classificationService = new ClassificationService();
     const statisticsService = new StatisticsService();
@@ -27,103 +27,29 @@ export function setupRoutes(app: Express): void {
     const projectDiscoveryService = new ProjectDiscoveryService();
     const dailySearchService = new DailySearchService();
 
-    // NUCLEAR CORS ROUTING：路由级别强制CORS
-    app.use((req, res, next) => {
+    // 路由级别的CORS处理（简化版）
+    app.use((req: any, res: any, next: any) => {
         const origin = req.headers.origin;
-        console.log('💣 NUCLEAR ROUTING CORS:', origin, req.method, req.path);
         
-        // 强制每个响应设置CORS头
+        // 确保CORS头部设置
         res.setHeader('Access-Control-Allow-Origin', origin || '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-        res.setHeader('Access-Control-Max-Age', '86400');
-        
-        // Vercel环境特殊
-        if (process.env.VERCEL) {
-            res.setHeader('Access-Control-Allow-Origin', '*');
-        }
+        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'false');
         
         if (req.method === 'OPTIONS') {
-            console.log('💥 OPTIONS路由处理');
-            return res.status(200).setHeader('Content-Type', 'application/json').json({ success: true });
+            return res.status(200).json({ success: true });
         }
         
         next();
     });
 
-    // 超强力响应拦截CORS - 强制覆盖所有响应
-    app.use((req, res, next) => {
-        const origin = req.headers.origin;
-        const originalSend = res.send;
-        const originalJson = res.json;
-        
-        // ULTRA CORS响应拦截器
-        res.send = function(data: any) {
-            if (!res.headersSent) {
-                // Vercel环境最终的CORS强制设置
-                res.setHeader('Access-Control-Allow-Origin', origin || '*');
-                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-                res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
-                res.setHeader('Access-Control-Allow-Credentials', 'true');
-                res.setHeader('Access-Control-Max-Age', '86400');
-                res.setHeader('Vary', 'Origin');
-                
-                // 特别强化GitHub Pages CORS头
-                if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
-                    res.setHeader('Access-Control-Allow-Origin', origin);
-                }
-                
-                if (process.env.VERCEL) {
-                    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-                }
-            }
-            return originalSend.call(this, data);
-        };
-        
-        res.json = function(obj: any) {
-            if (!res.headersSent) {
-                // 确保JSON响应携带完整CORS信息
-                res.setHeader('Access-Control-Allow-Origin', origin || '*');
-                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-                res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
-                res.setHeader('Access-Control-Allow-Credentials', 'true');
-                res.setHeader('Access-Control-Max-Age', '86400');
-                res.setHeader('Vary', 'Origin');
-                
-                // GitHub Pages特别强化
-                if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
-                    res.setHeader('Access-Control-Allow-Origin', origin);
-                }
-                
-                if (process.env.VERCEL) {
-                    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-                }
-            }
-            return originalJson.call(this, obj);
-        };
-        
-        next();
-    });
+    // 简化的响应中间件（移除复杂的拦截器）
 
-    // 健康检查 - 强化CORS测试  
+    // 健康检查端点
     app.get('/api/health', (req: Request, res: Response) => {
         const origin = req.headers.origin;
-        console.log('🏥 健康检查请求:', origin, 'Method:', req.method);
-        
-        // 手动强制CORS头确保绝对成功
-        res.setHeader('Access-Control-Allow-Origin', origin || '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-        res.setHeader('Access-Control-Max-Age', '86400');
-        res.setHeader('Vary', 'Origin');
-        
-        // GitHub Pages特别检查
-        if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
-            res.setHeader('Access-Control-Allow-Origin', origin);
-            console.log('🎯 健康检查GitHub Pages CORS:', origin);
-        }
+        console.log('🏥 健康检查请求:', origin);
         
         const responseData = { 
             success: true, 
@@ -136,7 +62,6 @@ export function setupRoutes(app: Express): void {
             api_status: 'online'
         };
         
-        console.log('🏥 健康检查响应准备发送:', responseData);
         res.status(200).json(responseData);
     });
 

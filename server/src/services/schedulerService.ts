@@ -71,7 +71,7 @@ export class SchedulerService {
      */
     stopScheduler(): void {
         console.log('⏹️ 停止定时任务调度器...');
-        cron.getTasks().forEach(task => task.destroy());
+        cron.getTasks().forEach(task => task.stop());
         this.isRunning = false;
         console.log('✅ 定时任务调度器已停止');
     }

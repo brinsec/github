@@ -115,6 +115,28 @@ export class GitHubService {
         }
     }
 
+    async getRepository(fullName: string): Promise<GitHubRepository | null> {
+        try {
+            console.log(`🔍 获取仓库信息: ${fullName}`);
+            
+            const response: AxiosResponse<GitHubRepository> = await axios.get(
+                `${this.baseURL}/repos/${fullName}`,
+                {
+                    headers: this.getHeaders()
+                }
+            );
+
+            console.log(`✅ 成功获取仓库信息: ${fullName}`);
+            return response.data;
+        } catch (error: any) {
+            console.error(`获取仓库信息失败: ${fullName}`, error.message);
+            if (error.response?.status === 404) {
+                return null;
+            }
+            throw error;
+        }
+    }
+
     async searchRepositories(query: string, sort: string = 'stars'): Promise<GitHubRepository[]> {
         try {
             const response: AxiosResponse<GitHubApiResponse> = await axios.get(

@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 const database_1 = require("./database");
@@ -13,40 +12,15 @@ const routes_1 = require("./routes");
 dotenv_1.default.config({ path: path_1.default.join(__dirname, '../../.env') });
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
-// 中间件 - 为所有环境配置宽松的CORS
+// 简化的CORS中间件
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    const allowedOrigins = [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'https://brinsec.github.io',
-        /^https:\/\/.*\.github\.io$/
-    ];
-    // 检查是否是允许的来源
-    let isAllowed = false;
-    if (origin) {
-        for (const allowed of allowedOrigins) {
-            if (typeof allowed === 'string' && origin === allowed) {
-                isAllowed = true;
-                break;
-            }
-            else if (allowed instanceof RegExp && allowed.test(origin)) {
-                isAllowed = true;
-                break;
-            }
-        }
-    }
-    // 设置CORS响应头 - 强化处理
-    if (isAllowed && origin) {
-        res.header('Access-Control-Allow-Origin', origin);
-    }
-    else {
-        res.header('Access-Control-Allow-Origin', 'https://brinsec.github.io');
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '3600');
+    // 设置CORS头部
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'false');
+    res.setHeader('Access-Control-Max-Age', '86400');
     // 处理预检请求
     if (req.method === 'OPTIONS') {
         res.status(200).end();
@@ -54,11 +28,8 @@ app.use((req, res, next) => {
     }
     next();
 });
-// 使用cors库作为backup  
-app.use((0, cors_1.default)({
-    origin: true,
-    credentials: true
-}));
+// 完全绕过cors库，使用纯自定义实现
+// app.use(cors({...})); // 禁用cors库，完全由自定义控制
 app.use(express_1.default.json());
 // 初始化数据库并启动服务器
 // 设置路由

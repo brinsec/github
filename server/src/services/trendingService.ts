@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { GitHubRepository } from '../../shared/types';
+import { GitHubRepository } from '../../../shared/types';
 import { saveRepository } from '../database';
 import { ClassificationService } from './classificationService';
 import { MockTrendingService } from './mockTrendingService';
@@ -170,7 +170,7 @@ export class TrendingService {
                 } catch (error) {
                     console.warn(`搜索查询失败: ${query}`, error);
                     // 如果遇到API限制，返回空数组而不是抛出错误
-                    if (error.response && error.response.status === 403) {
+                    if ((error as any).response && (error as any).response.status === 403) {
                         console.log('GitHub API速率限制，返回空结果');
                         return [];
                     }
@@ -186,7 +186,7 @@ export class TrendingService {
         } catch (error) {
             console.error('搜索热门仓库失败:', error);
             // 如果遇到API限制，返回空数组而不是抛出错误
-            if (error.response && error.response.status === 403) {
+            if ((error as any).response && (error as any).response.status === 403) {
                 console.log('GitHub API速率限制，返回空结果');
                 return [];
             }
@@ -275,7 +275,8 @@ export class TrendingService {
 
                     // 自动分类
                     try {
-                        await this.classificationService.classifyRepository(repo.id);
+                        const categories = await import('../database').then(m => m.getAllCategories());
+                        await this.classificationService.classifyRepository(repo, categories);
                         classifiedCount++;
                     } catch (error) {
                         console.warn(`分类失败: ${repo.full_name}`, error);

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { GitHubRepository } from '../../shared/types';
+import { GitHubRepository } from '../../../shared/types';
 import { DiscoveredProject, ProjectChange } from '../database';
 import { 
     saveDiscoveredProject, 
@@ -217,9 +217,9 @@ export class ProjectDiscoveryService {
             id: repo.id.toString(),
             name: repo.name,
             full_name: repo.full_name,
-            description: repo.description,
+            description: repo.description || '',
             html_url: repo.html_url,
-            language: repo.language,
+            language: repo.language || '',
             stargazers_count: repo.stargazers_count,
             forks_count: repo.forks_count,
             topics: repo.topics,
@@ -234,7 +234,7 @@ export class ProjectDiscoveryService {
             disabled: repo.disabled,
             private: repo.private,
             fork: repo.fork,
-            license: repo.license,
+            license: repo.license || { key: 'none', name: 'No License', spdx_id: 'none', url: '' },
             discovered_at: now.toISOString(),
             discovery_source: source,
             discovery_period: period,

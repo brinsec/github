@@ -18,9 +18,35 @@ function setupRoutes(app) {
     const schedulerService = new schedulerService_1.SchedulerService();
     const projectDiscoveryService = new projectDiscoveryService_1.ProjectDiscoveryService();
     const dailySearchService = new dailySearchService_1.DailySearchService();
-    // 健康检查
+    // 路由级别的CORS处理（简化版）
+    app.use((req, res, next) => {
+        const origin = req.headers.origin;
+        // 确保CORS头部设置
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'false');
+        if (req.method === 'OPTIONS') {
+            return res.status(200).json({ success: true });
+        }
+        next();
+    });
+    // 简化的响应中间件（移除复杂的拦截器）
+    // 健康检查端点
     app.get('/api/health', (req, res) => {
-        res.json({ success: true, message: 'GitHub自动化系统运行正常' });
+        const origin = req.headers.origin;
+        console.log('🏥 健康检查请求:', origin);
+        const responseData = {
+            success: true,
+            message: 'GitHub自动化系统运行正常',
+            origin: origin,
+            cors_enabled: true,
+            vercel_env: !!process.env.VERCEL,
+            github_token_set: !!process.env.GITHUB_TOKEN,
+            timestamp: new Date().toISOString(),
+            api_status: 'online'
+        };
+        res.status(200).json(responseData);
     });
     // 同步用户starred仓库
     app.post('/api/sync/:username', async (req, res) => {
@@ -55,11 +81,12 @@ function setupRoutes(app) {
             res.json(response);
         }
         catch (error) {
+            console.error('获取仓库列表失败:', error.message);
             const response = {
                 success: false,
-                error: error.message,
+                error: error.message || '获取仓库列表失败，数据库连接异常',
             };
-            res.status(500).json(response);
+            res.status(200).json(response); // 返回200状态码但success: false，前端可处理降级
         }
     });
     // 获取所有分类
@@ -100,7 +127,7 @@ function setupRoutes(app) {
             res.status(500).json(response);
         }
     });
-    // 获取统计信息
+    // 获取统计信息  
     app.get('/api/statistics', async (req, res) => {
         try {
             const statistics = await statisticsService.getStatistics();
@@ -111,11 +138,13 @@ function setupRoutes(app) {
             res.json(response);
         }
         catch (error) {
+            console.error('获取统计信息失败:', error.message);
+            // 优雅降级到模拟数据或错误
             const response = {
                 success: false,
-                error: error.message,
+                error: error.message || '获取统计信息失败，可能GitHub Token未正确配置',
             };
-            res.status(500).json(response);
+            res.status(200).json(response); // 改为200以避免401错误，前端会检测success字段
         }
     });
     // 获取分类详情

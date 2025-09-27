@@ -1,10 +1,10 @@
-import { GitHubRepository } from '../../shared/types';
+import { GitHubRepository } from '../../../shared/types';
 
 export class MockTrendingService {
     /**
      * 获取模拟的周度热门项目
      */
-    getWeeklyTrending(): GitHubRepository[] {
+    getWeeklyTrending(): any[] {
         return [
             {
                 id: 1,
@@ -96,7 +96,7 @@ export class MockTrendingService {
     /**
      * 获取模拟的月度热门项目
      */
-    getMonthlyTrending(): GitHubRepository[] {
+    getMonthlyTrending(): any[] {
         return [
             {
                 id: 4,
@@ -160,7 +160,7 @@ export class MockTrendingService {
     /**
      * 获取模拟的季度热门项目
      */
-    getQuarterlyTrending(): GitHubRepository[] {
+    getQuarterlyTrending(): any[] {
         return [
             {
                 id: 6,

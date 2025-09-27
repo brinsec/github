@@ -113,7 +113,7 @@ export class StatisticsService {
                 category,
                 repositories: categoryRepositories,
                 totalCount: categoryRepositories.length,
-                totalStars: categoryRepositories.reduce((sum, repo) => sum + repo.stargazers_count, 0),
+                totalStars: categoryRepositories.reduce((sum, repo) => sum + (repo?.stargazers_count || 0), 0),
             };
         } catch (error) {
             console.error('获取分类详情失败:', error);
