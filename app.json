@@ -1,0 +1,24 @@
+{
+  "name": "github-automation-system",
+  "description": "GitHub自动化系统 - 自动分类和统计关注的仓库",
+  "repository": "https://github.com/brinsec/github",
+  "logo": "https://github.com/brinsec/github/raw/main/client/public/vite.svg",
+  "keywords": ["github", "automation", "classification", "statistics"],
+  "env": {
+    "GITHUB_TOKEN": {
+      "description": "GitHub Personal Access Token",
+      "required": true
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
