@@ -5,30 +5,22 @@ const app = express();
 // 基础中间件
 app.use(express.json());
 
-// CORS 中间件
+// CORS 中间件 - 强制允许所有源
 app.use((req, res, next) => {
     const origin = req.headers.origin;
+    console.log('🌐 CORS请求来源:', origin, req.method, req.path);
     
-    // 允许的域名列表
-    const allowedOrigins = [
-        'https://brinsec.github.io',
-        'https://brinsecs-projects.vercel.app',
-        'http://localhost:3000',
-        'http://localhost:5173'
-    ];
-    
-    // 检查 origin 是否在允许列表中
-    const allowedOrigin = allowedOrigins.includes(origin as string) ? origin : '*';
-    
-    // 设置CORS头部
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    // 强制设置CORS头部 - 允许所有源
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
     res.setHeader('Access-Control-Allow-Credentials', 'false');
     res.setHeader('Access-Control-Max-Age', '86400');
     
+    // 立即处理OPTIONS预检请求
     if (req.method === 'OPTIONS') {
-        return res.status(200).json({ success: true });
+        console.log('✅ OPTIONS预检请求，返回200');
+        return res.status(200).end();
     }
     
     next();
@@ -39,11 +31,17 @@ app.get('/api/health', (req, res) => {
     const origin = req.headers.origin;
     console.log('🏥 健康检查请求:', origin);
     
+    // 确保CORS头部已设置
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+    
     const responseData = { 
         success: true, 
         message: 'GitHub自动化系统运行正常',
         origin: origin,
         cors_enabled: true,
+        cors_origin: '*',
         vercel_env: !!process.env.VERCEL,
         vercel_env_type: process.env.VERCEL_ENV || 'unknown',
         github_token_set: !!process.env.GITHUB_TOKEN,
@@ -67,6 +65,10 @@ app.get('/api/test', (req, res) => {
 
 // 模拟数据端点（用于测试）
 app.get('/api/repositories', (req, res) => {
+    // 确保CORS头部已设置
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
     const mockRepositories = [
         {
             id: 1,
@@ -112,6 +114,10 @@ app.get('/api/repositories', (req, res) => {
 
 // 模拟分类数据
 app.get('/api/categories', (req, res) => {
+    // 确保CORS头部已设置
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
     const mockCategories = [
         {
             id: 'frontend',
@@ -146,6 +152,10 @@ app.get('/api/categories', (req, res) => {
 
 // 模拟统计数据
 app.get('/api/statistics', (req, res) => {
+    // 确保CORS头部已设置
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
     const mockStats = {
         totalRepositories: 10,
         totalStars: 1000,
