@@ -12,6 +12,9 @@ importers:
         specifier: ^3.0.0
         version: 3.2.29
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.19
       concurrently:
         specifier: ^8.2.2
         version: 8.2.2
@@ -103,6 +106,9 @@ packages:
 
   '@types/node@16.18.11':
     resolution: {integrity: sha512-3oJbGBUWuS6ahSnEq1eN2XrCyf4YsWI8OyCvo7c64zQJNplk3mO84t53o8lfTk+2ji59g5ycfc6qQ3fdHliHuA==}
+
+  '@types/node@20.19.19':
+    resolution: {integrity: sha512-pb1Uqj5WJP7wrcbLU7Ru4QtA0+3kAXrkutGiD26wUKzSMgNNaPARTUDQmElUXp64kh3cWdou3Q0C7qwwxqSFmg==}
 
   '@vercel/build-utils@8.7.0':
     resolution: {integrity: sha512-ofZX+ABiW76u5khIyYyH5xK5KSuiAteqRu5hz2k1a2WHLwF7VpeBg8gdFR+HwbVnNkHtkMA64ya5Dd/lNoABkw==}
@@ -727,6 +733,9 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  undici-types@6.21.0:
+    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
   undici@5.28.4:
     resolution: {integrity: sha512-72RFADWFqKmUb2hmmvNODKL3p9hcB6Gt2DOQMis1SEBaV6a4MH8soBvzg+95CYhCKPFedut2JY9bMfrDl9D23g==}
     engines: {node: '>=14.0'}
@@ -856,6 +865,10 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/node@16.18.11': {}
+
+  '@types/node@20.19.19':
+    dependencies:
+      undici-types: 6.21.0
 
   '@vercel/build-utils@8.7.0': {}
 
@@ -1422,6 +1435,8 @@ snapshots:
   typescript@4.9.5: {}
 
   typescript@5.9.3: {}
+
+  undici-types@6.21.0: {}
 
   undici@5.28.4:
     dependencies:
