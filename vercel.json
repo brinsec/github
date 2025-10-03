@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "echo 'API-only deployment, no build needed'",
-  "outputDirectory": "public",
-  "installCommand": "pnpm install",
   "functions": {
     "api/health.ts": {
       "runtime": "@vercel/node@3.0.0"
@@ -10,15 +7,5 @@
     "api/index.ts": {
       "runtime": "@vercel/node@3.0.0"
     }
-  },
-  "routes": [
-    {
-      "src": "/api/health",
-      "dest": "/api/health.ts"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.ts"
-    }
-  ]
+  }
 }
