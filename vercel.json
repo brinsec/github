@@ -20,5 +20,8 @@
       "src": "/api/(.*)",
       "dest": "/api/index.ts"
     }
-  ]
+  ],
+  "engines": {
+    "node": "22.x"
+  }
 }

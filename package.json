@@ -27,5 +27,9 @@
     "devDependencies": {
         "concurrently": "^8.2.2",
         "typescript": "^5.0.0"
+    },
+    "engines": {
+        "node": "22.x",
+        "pnpm": ">=8.0.0"
     }
 }
