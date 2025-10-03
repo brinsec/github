@@ -1,0 +1,16 @@
+{
+  "name": "github-automation-api",
+  "version": "1.0.0",
+  "description": "GitHub自动化系统 API",
+  "main": "api/index.ts",
+  "scripts": {
+    "build": "echo 'API-only build'"
+  },
+  "dependencies": {
+    "@vercel/node": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

@@ -1,0 +1,12 @@
+node_modules
+server
+client
+shared
+scripts
+*.md
+Dockerfile
+docker-compose.yml
+.env
+.env.local
+.env.production
+.env.development

@@ -1,31 +1,19 @@
 {
-    "name": "github-automation-system",
+    "name": "github-automation-api",
     "version": "1.0.0",
-    "description": "GitHub自动化系统 - 自动分类和统计关注的仓库",
-    "main": "server/index.js",
+    "description": "GitHub自动化系统 API",
+    "main": "api/index.ts",
     "scripts": {
-        "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:client\"",
-        "dev:server": "cd server && pnpm run dev",
-        "dev:client": "cd client && pnpm run dev",
-        "build": "pnpm run build:client && pnpm run build:server",
-        "build:client": "cd client && pnpm run build",
-        "build:server": "cd server && pnpm run build",
-        "build:github-pages": "pnpm run build && node scripts/build-for-github-pages.js",
-        "start": "cd server && pnpm run start",
-        "install:all": "pnpm install && cd server && pnpm install && cd ../client && pnpm install",
-        "docker:build": "docker build -t github-automation .",
-        "docker:run": "docker run -p 3001:3001 -e GITHUB_TOKEN=$GITHUB_TOKEN github-automation",
-        "deploy:vercel": "vercel --prod",
-        "deploy:docker": "docker-compose up -d"
+        "build": "echo 'API-only build'",
+        "start": "echo 'API-only start'"
     },
-    "keywords": ["github", "automation", "classification", "statistics"],
+    "keywords": ["github", "automation", "api"],
     "author": "",
     "license": "MIT",
     "dependencies": {
         "@vercel/node": "^3.0.0"
     },
     "devDependencies": {
-        "concurrently": "^8.2.2",
         "typescript": "^5.0.0",
         "@types/node": "^20.0.0"
     }
