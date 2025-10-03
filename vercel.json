@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "buildCommand": "echo 'API-only deployment, no build needed'",
+  "outputDirectory": "public",
+  "installCommand": "pnpm install",
   "routes": [
     {
       "src": "/api/health",
