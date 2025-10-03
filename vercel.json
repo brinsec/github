@@ -1,16 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "node vercel-build.js",
-  "outputDirectory": ".",
-  "installCommand": "pnpm install",
-  "functions": {
-    "api/health.ts": {
-      "runtime": "@vercel/node"
-    },
-    "api/index.ts": {
-      "runtime": "@vercel/node"
-    }
-  },
   "routes": [
     {
       "src": "/api/health",
