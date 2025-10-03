@@ -1,40 +1,60 @@
-import express from 'express';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const app = express();
-
-// 基础中间件
-app.use(express.json());
-
-// CORS 中间件 - 强制允许所有源
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    console.log('🌐 CORS请求来源:', origin, req.method, req.path);
-    
-    // 强制设置CORS头部 - 允许所有源
+// CORS 中间件函数
+function setCorsHeaders(res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
     res.setHeader('Access-Control-Allow-Credentials', 'false');
     res.setHeader('Access-Control-Max-Age', '86400');
+}
+
+// 主处理函数
+export default function handler(req: VercelRequest, res: VercelResponse) {
+    const origin = req.headers.origin;
+    console.log('🌐 API请求:', origin, req.method, req.url);
     
-    // 立即处理OPTIONS预检请求
+    // 设置CORS头部
+    setCorsHeaders(res);
+    
+    // 处理OPTIONS预检请求
     if (req.method === 'OPTIONS') {
         console.log('✅ OPTIONS预检请求，返回200');
         return res.status(200).end();
     }
     
-    next();
-});
+    // 路由处理
+    const url = req.url || '';
+    
+    if (url.includes('/api/health')) {
+        return handleHealth(req, res);
+    } else if (url.includes('/api/repositories')) {
+        return handleRepositories(req, res);
+    } else if (url.includes('/api/categories')) {
+        return handleCategories(req, res);
+    } else if (url.includes('/api/statistics')) {
+        return handleStatistics(req, res);
+    } else if (url.includes('/api/test')) {
+        return handleTest(req, res);
+    } else {
+        return res.status(404).json({
+            success: false,
+            message: 'API端点不存在',
+            available_endpoints: [
+                '/api/health',
+                '/api/repositories',
+                '/api/categories',
+                '/api/statistics',
+                '/api/test'
+            ]
+        });
+    }
+}
 
 // 健康检查端点
-app.get('/api/health', (req, res) => {
+function handleHealth(req: VercelRequest, res: VercelResponse) {
     const origin = req.headers.origin;
     console.log('🏥 健康检查请求:', origin);
-    
-    // 确保CORS头部已设置
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
     
     const responseData = { 
         success: true, 
@@ -52,23 +72,19 @@ app.get('/api/health', (req, res) => {
     };
     
     res.status(200).json(responseData);
-});
+}
 
 // 测试端点
-app.get('/api/test', (req, res) => {
+function handleTest(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({
         success: true,
         message: 'API测试成功',
         timestamp: new Date().toISOString()
     });
-});
+}
 
-// 模拟数据端点（用于测试）
-app.get('/api/repositories', (req, res) => {
-    // 确保CORS头部已设置
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+// 仓库数据端点
+function handleRepositories(req: VercelRequest, res: VercelResponse) {
     const mockRepositories = [
         {
             id: 1,
@@ -100,7 +116,8 @@ app.get('/api/repositories', (req, res) => {
             owner: {
                 login: 'test',
                 id: 1,
-                avatar_url: 'https://github.com/test.png'
+                avatar_url: 'https://github.com/test.png',
+                html_url: 'https://github.com/test'
             }
         }
     ];
@@ -110,14 +127,10 @@ app.get('/api/repositories', (req, res) => {
         data: mockRepositories,
         message: '获取仓库列表成功（模拟数据）'
     });
-});
+}
 
-// 模拟分类数据
-app.get('/api/categories', (req, res) => {
-    // 确保CORS头部已设置
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+// 分类数据端点
+function handleCategories(req: VercelRequest, res: VercelResponse) {
     const mockCategories = [
         {
             id: 'frontend',
@@ -148,14 +161,10 @@ app.get('/api/categories', (req, res) => {
         data: mockCategories,
         message: '获取分类列表成功（模拟数据）'
     });
-});
+}
 
-// 模拟统计数据
-app.get('/api/statistics', (req, res) => {
-    // 确保CORS头部已设置
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+// 统计数据端点
+function handleStatistics(req: VercelRequest, res: VercelResponse) {
     const mockStats = {
         totalRepositories: 10,
         totalStars: 1000,
@@ -186,6 +195,4 @@ app.get('/api/statistics', (req, res) => {
         data: mockStats,
         message: '获取统计信息成功（模拟数据）'
     });
-});
-
-export default app;
+}
