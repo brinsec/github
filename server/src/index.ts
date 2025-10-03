@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -8,7 +8,7 @@ import { setupRoutes } from './routes';
 // 加载环境变量
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const app = express();
+const app: Express = express();
 const PORT = process.env.PORT || 3001;
 
 // 中间件 - NUCLEAR OPTION CORS：绕过所有CORS限制

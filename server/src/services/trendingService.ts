@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { GitHubRepository } from '../../shared/types';
-import { saveRepository } from '../database';
+import { GitHubRepository } from '../../../shared/types';
+import { saveRepository, getAllCategories, saveRepositoryClassification } from '../database';
 import { ClassificationService } from './classificationService';
 import { MockTrendingService } from './mockTrendingService';
 
@@ -167,7 +167,7 @@ export class TrendingService {
 
                     // 增加延迟，避免API限制
                     await new Promise(resolve => setTimeout(resolve, 2000));
-                } catch (error) {
+                } catch (error: any) {
                     console.warn(`搜索查询失败: ${query}`, error);
                     // 如果遇到API限制，返回空数组而不是抛出错误
                     if (error.response && error.response.status === 403) {
@@ -183,7 +183,7 @@ export class TrendingService {
                 .sort((a, b) => b.stargazers_count - a.stargazers_count)
                 .slice(0, 50); // 返回前50个
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('搜索热门仓库失败:', error);
             // 如果遇到API限制，返回空数组而不是抛出错误
             if (error.response && error.response.status === 403) {
@@ -259,6 +259,9 @@ export class TrendingService {
             let starredCount = 0;
             let classifiedCount = 0;
 
+            // 获取所有分类
+            const categories = await getAllCategories();
+
             // 自动star前20个最热门的项目
             const topRepos = trendingRepos.slice(0, 20);
             
@@ -275,7 +278,10 @@ export class TrendingService {
 
                     // 自动分类
                     try {
-                        await this.classificationService.classifyRepository(repo.id);
+                        const classifications = this.classificationService.classifyRepository(repo, categories);
+                        for (const classification of classifications) {
+                            await saveRepositoryClassification(classification);
+                        }
                         classifiedCount++;
                     } catch (error) {
                         console.warn(`分类失败: ${repo.full_name}`, error);

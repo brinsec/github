@@ -18,9 +18,100 @@ function setupRoutes(app) {
     const schedulerService = new schedulerService_1.SchedulerService();
     const projectDiscoveryService = new projectDiscoveryService_1.ProjectDiscoveryService();
     const dailySearchService = new dailySearchService_1.DailySearchService();
-    // 健康检查
+    // NUCLEAR CORS ROUTING：路由级别强制CORS
+    app.use((req, res, next) => {
+        const origin = req.headers.origin;
+        console.log('💣 NUCLEAR ROUTING CORS:', origin, req.method, req.path);
+        // 强制每个响应设置CORS头
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Max-Age', '86400');
+        // Vercel环境特殊
+        if (process.env.VERCEL) {
+            res.setHeader('Access-Control-Allow-Origin', '*');
+        }
+        if (req.method === 'OPTIONS') {
+            console.log('💥 OPTIONS路由处理');
+            return res.status(200).setHeader('Content-Type', 'application/json').json({ success: true });
+        }
+        next();
+    });
+    // 超强力响应拦截CORS - 强制覆盖所有响应
+    app.use((req, res, next) => {
+        const origin = req.headers.origin;
+        const originalSend = res.send;
+        const originalJson = res.json;
+        // ULTRA CORS响应拦截器
+        res.send = function (data) {
+            if (!res.headersSent) {
+                // Vercel环境最终的CORS强制设置
+                res.setHeader('Access-Control-Allow-Origin', origin || '*');
+                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+                res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+                res.setHeader('Access-Control-Allow-Credentials', 'true');
+                res.setHeader('Access-Control-Max-Age', '86400');
+                res.setHeader('Vary', 'Origin');
+                // 特别强化GitHub Pages CORS头
+                if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
+                    res.setHeader('Access-Control-Allow-Origin', origin);
+                }
+                if (process.env.VERCEL) {
+                    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+                }
+            }
+            return originalSend.call(this, data);
+        };
+        res.json = function (obj) {
+            if (!res.headersSent) {
+                // 确保JSON响应携带完整CORS信息
+                res.setHeader('Access-Control-Allow-Origin', origin || '*');
+                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+                res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+                res.setHeader('Access-Control-Allow-Credentials', 'true');
+                res.setHeader('Access-Control-Max-Age', '86400');
+                res.setHeader('Vary', 'Origin');
+                // GitHub Pages特别强化
+                if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
+                    res.setHeader('Access-Control-Allow-Origin', origin);
+                }
+                if (process.env.VERCEL) {
+                    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+                }
+            }
+            return originalJson.call(this, obj);
+        };
+        next();
+    });
+    // 健康检查 - 强化CORS测试  
     app.get('/api/health', (req, res) => {
-        res.json({ success: true, message: 'GitHub自动化系统运行正常' });
+        const origin = req.headers.origin;
+        console.log('🏥 健康检查请求:', origin, 'Method:', req.method);
+        // 手动强制CORS头确保绝对成功
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Content-Range, X-Total-Count, Cache-Control, Pragma');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Max-Age', '86400');
+        res.setHeader('Vary', 'Origin');
+        // GitHub Pages特别检查
+        if (origin && (origin.includes('github.io') || origin.includes('brinsec'))) {
+            res.setHeader('Access-Control-Allow-Origin', origin);
+            console.log('🎯 健康检查GitHub Pages CORS:', origin);
+        }
+        const responseData = {
+            success: true,
+            message: 'GitHub自动化系统运行正常',
+            origin: origin,
+            cors_enabled: true,
+            vercel_env: !!process.env.VERCEL,
+            github_token_set: !!process.env.GITHUB_TOKEN,
+            timestamp: new Date().toISOString(),
+            api_status: 'online'
+        };
+        console.log('🏥 健康检查响应准备发送:', responseData);
+        res.status(200).json(responseData);
     });
     // 同步用户starred仓库
     app.post('/api/sync/:username', async (req, res) => {
@@ -55,11 +146,12 @@ function setupRoutes(app) {
             res.json(response);
         }
         catch (error) {
+            console.error('获取仓库列表失败:', error.message);
             const response = {
                 success: false,
-                error: error.message,
+                error: error.message || '获取仓库列表失败，数据库连接异常',
             };
-            res.status(500).json(response);
+            res.status(200).json(response); // 返回200状态码但success: false，前端可处理降级
         }
     });
     // 获取所有分类
@@ -100,7 +192,7 @@ function setupRoutes(app) {
             res.status(500).json(response);
         }
     });
-    // 获取统计信息
+    // 获取统计信息  
     app.get('/api/statistics', async (req, res) => {
         try {
             const statistics = await statisticsService.getStatistics();
@@ -111,11 +203,13 @@ function setupRoutes(app) {
             res.json(response);
         }
         catch (error) {
+            console.error('获取统计信息失败:', error.message);
+            // 优雅降级到模拟数据或错误
             const response = {
                 success: false,
-                error: error.message,
+                error: error.message || '获取统计信息失败，可能GitHub Token未正确配置',
             };
-            res.status(500).json(response);
+            res.status(200).json(response); // 改为200以避免401错误，前端会检测success字段
         }
     });
     // 获取分类详情

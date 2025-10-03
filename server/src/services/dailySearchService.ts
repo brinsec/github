@@ -6,8 +6,10 @@ import {
     calculateMonthlyAggregations,
     calculateYearlyAggregations,
     saveAggregatedSearchData,
-    AggregatedSearchData 
+    AggregatedSearchData,
+    db 
 } from '../database';
+import { GitHubRepository } from '../../../shared/types';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -29,23 +31,6 @@ interface GitHubApiResponse {
     items: GitHubRepository[];
     total_count: number;
     incomplete_results: boolean;
-}
-
-interface GitHubRepository {
-    id: number;
-    name: string;
-    full_name: string;
-    description: string;
-    html_url: string;
-    language: string;
-    stargazers_count: number;
-    forks_count: number;
-    created_at: string;
-    updated_at: string;
-    topics: string[];
-    size: number;
-    watchers_count: number;
-    open_issues_count: number;
 }
 
 export class DailySearchService {
@@ -382,8 +367,15 @@ export class DailySearchService {
      * 获取历史搜索结果
      */
     async getSearchHistory(limit = 10): Promise<DailySearchResult[]> {
-        const db = await getLowdbDatabase();
-        const results = db.get('searchResults').value() || [];
-        return results.slice(-limit);
+        await db.read();
+        const results = db.data.dailySearchRecords || [];
+        return results.slice(-limit).map(record => ({
+            id: record.id,
+            searchDate: record.searchDate,
+            searchQuery: record.searchQuery,
+            results: record.results,
+            stats: record.stats,
+            reportPath: record.reportPath
+        }));
     }
 }

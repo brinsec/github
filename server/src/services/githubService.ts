@@ -115,6 +115,21 @@ export class GitHubService {
         }
     }
 
+    async getRepository(fullName: string): Promise<GitHubRepository> {
+        try {
+            const response: AxiosResponse<GitHubRepository> = await axios.get(
+                `${this.baseURL}/repos/${fullName}`,
+                { headers: this.getHeaders() },
+            );
+            return response.data;
+        } catch (error: any) {
+            if (error.response?.status === 404) {
+                throw new Error('仓库不存在');
+            }
+            throw new Error(`获取仓库信息失败: ${error.message}`);
+        }
+    }
+
     async searchRepositories(query: string, sort: string = 'stars'): Promise<GitHubRepository[]> {
         try {
             const response: AxiosResponse<GitHubApiResponse> = await axios.get(

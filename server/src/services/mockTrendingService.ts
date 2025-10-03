@@ -1,4 +1,4 @@
-import { GitHubRepository } from '../../shared/types';
+import { GitHubRepository } from '../../../shared/types';
 
 export class MockTrendingService {
     /**

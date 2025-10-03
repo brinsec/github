@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { GitHubRepository } from '../../shared/types';
+import { GitHubRepository } from '../../../shared/types';
 import { DiscoveredProject, ProjectChange } from '../database';
 import { 
     saveDiscoveredProject, 
