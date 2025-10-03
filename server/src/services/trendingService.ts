@@ -318,6 +318,7 @@ export class TrendingService {
             full_name: item.full_name,
             description: item.description || '',
             html_url: item.html_url,
+            clone_url: item.clone_url,
             language: item.language,
             stargazers_count: item.stargazers_count,
             forks_count: item.forks_count,
@@ -339,6 +340,12 @@ export class TrendingService {
                 spdx_id: item.license.spdx_id,
                 url: item.license.url,
             } : null,
+            owner: {
+                login: item.owner.login,
+                id: item.owner.id,
+                avatar_url: item.owner.avatar_url,
+                html_url: item.owner.html_url,
+            },
         };
     }
 

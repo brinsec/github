@@ -176,6 +176,7 @@ export class ProjectDiscoveryService {
                 full_name: 'developer/awesome-new-project',
                 description: 'A brand new awesome project that just got created',
                 html_url: 'https://github.com/developer/awesome-new-project',
+                clone_url: 'https://github.com/developer/awesome-new-project.git',
                 language: 'JavaScript',
                 stargazers_count: Math.floor(Math.random() * 100) + 10,
                 forks_count: Math.floor(Math.random() * 50),
@@ -197,6 +198,12 @@ export class ProjectDiscoveryService {
                     spdx_id: 'MIT',
                     url: 'https://api.github.com/licenses/mit',
                 },
+                owner: {
+                    login: 'developer',
+                    id: 12345,
+                    avatar_url: 'https://github.com/developer.png',
+                    html_url: 'https://github.com/developer'
+                }
             }
         ];
     }
@@ -217,9 +224,9 @@ export class ProjectDiscoveryService {
             id: repo.id.toString(),
             name: repo.name,
             full_name: repo.full_name,
-            description: repo.description,
+            description: repo.description || '',
             html_url: repo.html_url,
-            language: repo.language,
+            language: repo.language || '',
             stargazers_count: repo.stargazers_count,
             forks_count: repo.forks_count,
             topics: repo.topics,
@@ -234,7 +241,7 @@ export class ProjectDiscoveryService {
             disabled: repo.disabled,
             private: repo.private,
             fork: repo.fork,
-            license: repo.license,
+            license: repo.license || { key: '', name: '', spdx_id: '', url: '' },
             discovered_at: now.toISOString(),
             discovery_source: source,
             discovery_period: period,

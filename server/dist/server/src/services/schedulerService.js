@@ -62,7 +62,11 @@ class SchedulerService {
      */
     stopScheduler() {
         console.log('⏹️ 停止定时任务调度器...');
-        node_cron_1.default.getTasks().forEach(task => task.stop());
+        node_cron_1.default.getTasks().forEach(task => {
+            if (task && typeof task.stop === 'function') {
+                task.stop();
+            }
+        });
         this.isRunning = false;
         console.log('✅ 定时任务调度器已停止');
     }

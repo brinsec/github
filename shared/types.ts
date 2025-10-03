@@ -15,6 +15,12 @@ export interface GitHubRepository {
     updated_at: string;
     pushed_at: string;
     topics: string[];
+    default_branch: string;
+    open_issues_count: number;
+    archived: boolean;
+    disabled: boolean;
+    private: boolean;
+    fork: boolean;
     license: {
         key: string;
         name: string;
