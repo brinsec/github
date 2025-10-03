@@ -21,7 +21,11 @@
     "keywords": ["github", "automation", "classification", "statistics"],
     "author": "",
     "license": "MIT",
+    "dependencies": {
+        "@vercel/node": "^3.0.0"
+    },
     "devDependencies": {
-        "concurrently": "^8.2.2"
+        "concurrently": "^8.2.2",
+        "typescript": "^5.0.0"
     }
 }
